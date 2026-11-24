@@ -100,7 +100,11 @@ public static class Program
         using (var dc = dv.RenderOpen())
         {
             dc.DrawRectangle(w.Background is SolidColorBrush b && b.Color.A > 0 ? b : new SolidColorBrush(Color.FromRgb(10, 10, 19)), null, new Rect(0, 0, width, height));
+            // VisualBrush ignores the window's right-to-left mirroring, so flip it back for a true picture
+            bool rtl = w.FlowDirection == FlowDirection.RightToLeft;
+            if (rtl) dc.PushTransform(new MatrixTransform(-1, 0, 0, 1, width, 0));
             dc.DrawRectangle(new VisualBrush(el), null, new Rect(0, 0, width, height));
+            if (rtl) dc.Pop();
         }
         rtb.Render(dv);
         var enc = new PngBitmapEncoder();

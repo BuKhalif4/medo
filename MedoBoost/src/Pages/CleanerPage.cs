@@ -34,13 +34,14 @@ public class CleanerPage : PageBase
 
         scanBtn = Ui.Btn("فحص", "", async () => await Scan(), "BtnGhost");
         cleanBtn = Ui.Btn("تنظيف المحدد", "", async () => await Clean());
-        closeApps = Ui.Check(Ui.Txt("إغلاق البرامج المفتوحة تلقائياً (ديسكورد، المتصفحات...) لتنظيف أعمق", 12.5, "TextDim"), false);
+        closeApps = Ui.Check(Ui.Txt("إغلاق البرامج المفتوحة لتنظيف أعمق", 12.5, "TextDim"), false);
         var showDeleted = Ui.Btn("عرض الملفات المحذوفة", "", () =>
         {
             var f = Path.Combine(Util.DataDir, "logs", $"deleted-files-{DateTime.Now:yyyy-MM-dd}.txt");
             if (File.Exists(f)) Process.Start(new ProcessStartInfo("notepad.exe", $"\"{f}\"") { UseShellExecute = true });
             else Dialogs.Toast("ما في ملفات محذوفة اليوم بعد", "info");
         }, "BtnGhost");
+        closeApps.ToolTip = "يسكّر ديسكورد والمتصفحات وغيرها قبل التنظيف ويرجع يفتحها بعده";
         progress.Visibility = Visibility.Hidden;
         spinner.Visibility = Visibility.Collapsed;
 
