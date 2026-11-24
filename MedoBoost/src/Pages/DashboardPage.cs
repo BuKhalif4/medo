@@ -138,13 +138,13 @@ public class DashboardPage : PageBase
         hw.Updated += s => Dispatcher.BeginInvoke(() => { if (visible) Update(s); });
     }
 
-    readonly Dictionary<string, (TextBlock value, TextBlock sub)> specCells = new();
+    readonly Dictionary<string, (TextBlock value, WrapPanel sub)> specCells = new();
     SystemSpecs specs;
 
     Border SpecCard(string key, string glyph, string label)
     {
         var v = Ui.Txt("...", 15, "Text", FontWeights.Bold, TextWrapping.Wrap);
-        var sub = Ui.Txt("", 11.5, "TextDim", null, TextWrapping.Wrap);
+        var sub = new WrapPanel();
         specCells[key] = (v, sub);
         var card = Ui.Card(Ui.VStack(Ui.HStack(8, Ui.Icon(glyph, 13, "Accent2"), Ui.Txt(label, 12, "TextDim")), v.M(0, 8, 0, 4), sub), 14, 12);
         card.Background = Ui.B("Surface2");
@@ -154,7 +154,7 @@ public class DashboardPage : PageBase
     async Task LoadSpecs()
     {
         specs = await Task.Run(SystemInfo.Read);
-        void Set(string k, string v, string sub) { if (specCells.TryGetValue(k, out var c)) { c.value.Text = v; c.sub.Text = sub; } }
+        void Set(string k, string v, string sub) { if (specCells.TryGetValue(k, out var c)) { c.value.Text = v; Mixed(c.sub, sub); } }
         Set("cpu", specs.Cpu, specs.CpuSub);
         Set("ram", specs.Ram, specs.RamSub);
         Set("gpu", specs.Gpu, specs.GpuSub);
@@ -165,6 +165,29 @@ public class DashboardPage : PageBase
         // numbers + units must read left-to-right ("16 GB", "1920×1080"); keep them on the right edge like the labels
         foreach (var k in new[] { "ram", "disk", "display" })
             if (specCells.TryGetValue(k, out var c)) { c.value.FlowDirection = FlowDirection.LeftToRight; c.value.HorizontalAlignment = HorizontalAlignment.Left; }
+    }
+
+    /// <summary>
+    /// Renders "8 أنوية • 3.0 GHz" correctly: parts wrapped in U+202A…U+202C by SystemInfo become their own
+    /// left-to-right TextBlocks, so numbers and units never get flipped inside the Arabic line.
+    /// </summary>
+    static void Mixed(WrapPanel host, string text)
+    {
+        host.Children.Clear();
+        int i = 0;
+        while (i < text.Length)
+        {
+            int a = text.IndexOf('\u202A', i);
+            string plain = a < 0 ? text[i..] : text[i..a];
+            foreach (var w in plain.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                host.Children.Add(Ui.Txt(w, 11.5, "TextDim").M(0, 0, 4, 0));
+            if (a < 0) break;
+            int b = text.IndexOf('\u202C', a);
+            if (b < 0) b = text.Length;
+            var ltr = Ui.Txt(text[(a + 1)..b], 11.5, "TextDim").Ltr();
+            host.Children.Add(ltr.M(0, 0, 4, 0));
+            i = Math.Min(text.Length, b + 1);
+        }
     }
 
     static string OsName()
