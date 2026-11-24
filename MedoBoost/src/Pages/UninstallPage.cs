@@ -77,13 +77,16 @@ public class UninstallPage : PageBase
         Border root = null;
         del.Click += async (_, _) => await Remove(a, root);
 
-        var g = Ui.Cols(new[] { "42", "*", "Auto" }, img, Ui.VStack(Ui.Txt(a.Name, 13.5, "Text", FontWeights.SemiBold), subTb).M(0, 0, 14, 0), del);
+        var nameTb = Ui.Txt(a.Name, 13.5, "Text", FontWeights.SemiBold);
+        // program names are English; show them left-to-right so leading digits (7-Zip) don't flip
+        nameTb.FlowDirection = FlowDirection.LeftToRight; nameTb.HorizontalAlignment = HorizontalAlignment.Right;
+        var g = Ui.Cols(new[] { "42", "*", "Auto" }, img, Ui.VStack(nameTb, subTb).M(0, 0, 14, 0), del);
         root = new Border
         {
             Child = g, Padding = new Thickness(14, 10, 14, 10), Margin = new Thickness(0, 0, 0, 7), CornerRadius = new CornerRadius(12),
             Background = Ui.B("Surface"), BorderBrush = Ui.B("BorderB"), BorderThickness = new Thickness(1),
         };
-        ((TextBlock)((StackPanel)g.Children[1]).Children[0]).TextTrimming = TextTrimming.CharacterEllipsis;
+        nameTb.TextTrimming = TextTrimming.CharacterEllipsis;
         return root;
     }
 
