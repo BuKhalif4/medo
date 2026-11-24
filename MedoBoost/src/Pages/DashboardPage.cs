@@ -179,8 +179,15 @@ public class DashboardPage : PageBase
         {
             int a = text.IndexOf('\u202A', i);
             string plain = a < 0 ? text[i..] : text[i..a];
+            // Arabic words go one by one (right-to-left); runs of English words stay together left-to-right
+            var latin = new List<string>();
+            void Flush() { if (latin.Count > 0) { host.Children.Add(Ui.Txt(string.Join(" ", latin), 11.5, "TextDim").Ltr().M(0, 0, 4, 0)); latin.Clear(); } }
             foreach (var w in plain.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-                host.Children.Add(Ui.Txt(w, 11.5, "TextDim").M(0, 0, 4, 0));
+            {
+                if (w.Any(ch => ch >= '\u0600' && ch <= '\u06FF') || w == "•") { Flush(); host.Children.Add(Ui.Txt(w, 11.5, "TextDim").M(0, 0, 4, 0)); }
+                else latin.Add(w);
+            }
+            Flush();
             if (a < 0) break;
             int b = text.IndexOf('\u202C', a);
             if (b < 0) b = text.Length;
