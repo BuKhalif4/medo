@@ -70,7 +70,9 @@ public class ProcessesPage : PageBase
             tb.MouseLeftButtonUp += (_, _) => { sortBy = key; _ = Refresh(); };
             return tb;
         }
-        var colHead = Ui.Cols(new[] { "44", "*", "140", "60", "60", "200" }, null, H("البرنامج", "name"), H("الرام ▾", "ram"), H("CPU", "cpu"), H("GPU", "gpu"), Ui.Txt("إجراءات", 12, "TextMute", FontWeights.SemiBold));
+        var cpuH = H("CPU", "cpu"); var gpuH = H("GPU", "gpu");
+        cpuH.HorizontalAlignment = gpuH.HorizontalAlignment = HorizontalAlignment.Center;
+        var colHead = Ui.Cols(new[] { "44", "*", "140", "60", "60", "200" }, null, H("البرنامج", "name"), H("الرام ▾", "ram"), cpuH, gpuH, Ui.Txt("إجراءات", 12, "TextMute", FontWeights.SemiBold));
         colHead.Margin = new Thickness(14, 0, 14, 6);
         Children.Add(Ui.VStack(colHead, countText.M(14, 0, 0, 6)));
         Children[^1].SetValue(Grid.RowProperty, 1);
@@ -159,7 +161,7 @@ public class ProcessesPage : PageBase
         r.Ram.HorizontalAlignment = HorizontalAlignment.Right;
         r.RamBar = Ui.Progress(); r.RamBar.Height = 4; r.RamBar.Width = 120; r.RamBar.HorizontalAlignment = HorizontalAlignment.Left;
         r.Cpu = Ui.Txt("", 13).Ltr(); r.Gpu = Ui.Txt("", 13).Ltr();
-        r.Cpu.HorizontalAlignment = r.Gpu.HorizontalAlignment = HorizontalAlignment.Left;
+        r.Cpu.HorizontalAlignment = r.Gpu.HorizontalAlignment = HorizontalAlignment.Center;
 
         var trim = SmallBtn("", null, async () =>
         {
