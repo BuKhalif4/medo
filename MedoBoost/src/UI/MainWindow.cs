@@ -25,6 +25,7 @@ public class MainWindow : Window
     readonly Dictionary<string, RadioButton> navButtons = new();
     PageBase current;
     public static MainWindow Instance { get; private set; }
+    public static bool SkipUpdateCheck;
     public OverlayWindow Overlay { get; private set; }
     TextBlock miniCpu, miniRam;
     ProgressBar miniCpuBar, miniRamBar;
@@ -66,6 +67,12 @@ public class MainWindow : Window
             Navigate("home");
             // FPS page listens for the benchmark hotkey, so create it up-front
             try { pages["fps"] = factories["fps"](); } catch (Exception ex) { Log.Error("FPS page: " + ex.Message); }
+            if (Settings.Current.AutoUpdateCheck && !SkipUpdateCheck)
+            {
+                var t = new DispatcherTimer { Interval = TimeSpan.FromSeconds(6) };
+                t.Tick += async (_, _) => { t.Stop(); await UpdateUi.CheckAndPrompt(true); };
+                t.Start();
+            }
         };
         SourceInitialized += OnSourceInitialized;
         StateChanged += (_, _) => { if (Content is FrameworkElement fe) fe.Margin = WindowState == WindowState.Maximized ? new Thickness(7) : new Thickness(0); };
@@ -134,7 +141,7 @@ public class MainWindow : Window
             Ui.Cols(new[] { "*", "Auto" }, Ui.Txt("الرام", 12, "TextDim"), miniRam), miniRamBar.M(0, 5, 0, 0));
         var miniCard = Ui.Card(mini, 14, 12);
         miniCard.Margin = new Thickness(14, 0, 14, 10);
-        var ver = Ui.Txt("v1.0  •  صنع خصيصاً لـ MEDO", 10.5, "TextMute");
+        var ver = Ui.Txt($"{Updater.CurrentText}  •  صنع خصيصاً لـ MEDO", 10.5, "TextMute");
         ver.HorizontalAlignment = HorizontalAlignment.Center; ver.Margin = new Thickness(0, 0, 0, 14);
         var bottom = Ui.VStack(miniCard, ver);
         Grid.SetRow(bottom, 2);

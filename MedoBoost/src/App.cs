@@ -44,6 +44,7 @@ public static class Program
         HardwareMonitor.Instance.Start();
         Task.Run(() => FpsMonitor.Instance.Start());
 
+        MainWindow.SkipUpdateCheck = selfTest;
         MainWindow win;
         try { win = new MainWindow(); }
         catch (Exception ex)

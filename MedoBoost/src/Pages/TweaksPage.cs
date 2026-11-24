@@ -24,6 +24,8 @@ public class TweaksPage : PageBase
             Dialogs.Toast(ok ? "تم إنشاء نقطة الاستعادة ✔" : "فشل: " + msg, ok ? "ok" : "err");
         }, "BtnGhost");
         var applyRec = Ui.Btn("تطبيق المنصوح به", "", async () => await ApplyRecommended());
+        var enableAll = Ui.Btn("تفعيل الكل", "\uE73A", async () => await EnableAll(Tweaks.All), "BtnGhost");
+        enableAll.ToolTip = "يفعّل كل التويكات – بعدها طفّي اللي ما تبيه";
         var revertAll = Ui.Btn("إرجاع كل شي للأصل", "", async () => await RevertAll(), "BtnGhost");
 
         var info = Ui.Card(Ui.Cols(new[] { "Auto", "*" }, Ui.Icon("", 22, "Good").M(0, 0, 12, 0),
@@ -33,7 +35,7 @@ public class TweaksPage : PageBase
         var head = Ui.VStack(
             Ui.Title("تسريع وتويكات"),
             Ui.Txt("تحسينات Windows للألعاب والأداء والشبكة والخصوصية – كل وحدة مشروحة وتقدر ترجعها.", 13, "TextDim").M(0, 4, 0, 14),
-            Ui.Cols(new[] { "Auto", "Auto", "Auto", "*", "Auto" }, applyRec, restore.M(10, 0, 0, 0), revertAll.M(10, 0, 0, 0), null, summary),
+            Ui.Cols(new[] { "Auto", "Auto", "Auto", "Auto", "*", "Auto" }, applyRec, enableAll.M(10, 0, 0, 0), restore.M(10, 0, 0, 0), revertAll.M(10, 0, 0, 0), null, summary),
             info.M(0, 14, 0, 14));
         Children.Add(head);
 
@@ -44,7 +46,11 @@ public class TweaksPage : PageBase
             var cat = Tweaks.Categories[ci];
             var body = new StackPanel();
             foreach (var t in Tweaks.All.Where(t => t.Category == cat)) body.Children.Add(Row(t));
-            var card = Ui.Card(Ui.VStack(Ui.HStack(10, Ui.Icon(glyphs[ci], 18, "Accent2"), Ui.Txt(cat, 16, "Text", FontWeights.Bold)), Ui.Sep(), body), 18);
+            var catTweaks = Tweaks.All.Where(t => t.Category == cat).ToList();
+            var catAll = Ui.Btn("تفعيل الكل", null, async () => await EnableAll(catTweaks), "BtnGhost");
+            catAll.Padding = new Thickness(10, 4, 10, 4); catAll.FontSize = 11.5;
+            var catHead = Ui.Cols(new[] { "*", "Auto" }, Ui.HStack(10, Ui.Icon(glyphs[ci], 18, "Accent2"), Ui.Txt(cat, 16, "Text", FontWeights.Bold)), catAll);
+            var card = Ui.Card(Ui.VStack(catHead, Ui.Sep(), body), 18);
             card.Margin = new Thickness(0, 0, 0, 14);
             list.Children.Add(card);
         }
@@ -128,6 +134,23 @@ public class TweaksPage : PageBase
         }
         await RefreshStates();
         Dialogs.Toast($"تم تطبيق {ok} تويك ✔ – أعد تشغيل الجهاز لأفضل نتيجة");
+    }
+
+    async Task EnableAll(List<Tweak> tweaks)
+    {
+        var todo = tweaks.Where(t => switches[t].IsChecked != true).ToList();
+        if (todo.Count == 0) { Dialogs.Toast("كلها مفعلة بالفعل 👌", "info"); return; }
+        var caution = todo.Where(t => t.Risk == Risk.Caution).Select(t => "• " + t.Name).ToList();
+        string msg = $"سيتم تفعيل {todo.Count} تويك. بعدها تقدر تطفي أي واحد ما تبيه وبيرجع لأصله.";
+        if (caution.Count > 0) msg += "\n\nانتبه، هذول فيهم شي لازم تعرفه:\n" + string.Join("\n", caution);
+        if (!await Dialogs.Confirm("تفعيل الكل", msg, "فعّل الكل")) return;
+        int ok = 0;
+        foreach (var t in todo)
+        {
+            try { await Task.Run(t.Apply); ok++; } catch (Exception ex) { Log.Error(t.Name + ": " + ex.Message); }
+        }
+        await RefreshStates();
+        Dialogs.Toast($"تم تفعيل {ok} تويك ✔ – أعد تشغيل الجهاز لأفضل نتيجة");
     }
 
     async Task RevertAll()

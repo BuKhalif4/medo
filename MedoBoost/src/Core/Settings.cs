@@ -24,6 +24,7 @@ public class AppSettings
     public List<string> BoostKillList { get; set; } = new();
     public bool StartMinimized { get; set; } = false;
     public bool AutoGamePriority { get; set; } = false;
+    public bool AutoUpdateCheck { get; set; } = true;
     public string BenchLabel { get; set; } = "قبل";
     public bool AutoRamClean { get; set; } = false;
     public int AutoRamThreshold { get; set; } = 85;

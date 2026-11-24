@@ -18,12 +18,14 @@ public class LogPage : PageBase
 
         var about = Ui.Card(Ui.VStack(
             Ui.HStack(14, new Image { Source = Ui.Logo(), Width = 56, Height = 56 },
-                Ui.VStack(Ui.GradText("MEDO Boost", 24), Ui.Txt("نسخة 1.0 – برنامج تسريع وتنظيف ومراقبة، مصنوع خصيصاً لك", 12.5, "TextDim"))),
-            Ui.Txt("• البرنامج ما يتصل بالإنترنت ولا يرسل أي بيانات.\n• كل ملف ينحذف ينكتب في «deleted-files» وكل تعديل ينحفظ أصله في backup.json عشان ترجعه.\n• ما يلمس ملفاتك الشخصية أو كلمات السر أو الألعاب أو ملفات الحفظ.\n• الحساسات من مكتبة LibreHardwareMonitor المفتوحة المصدر، وعداد FPS من أحداث Windows (ETW) بدون حقن.", 12.5, "TextDim", null, TextWrapping.Wrap).M(0, 14, 0, 14),
+                Ui.VStack(Ui.GradText("MEDO Boost", 24), Ui.Txt($"نسخة {Updater.CurrentText.TrimStart('v')} – برنامج تسريع وتنظيف ومراقبة، مصنوع خصيصاً لك", 12.5, "TextDim"))),
+            Ui.Txt("• البرنامج ما يرسل أي بيانات. الاتصال الوحيد: يتحقق من التحديثات على صفحة المشروع في GitHub (BuKhalif4/medo).\n• كل ملف ينحذف ينكتب في «deleted-files» وكل تعديل ينحفظ أصله في backup.json عشان ترجعه.\n• ما يلمس ملفاتك الشخصية أو كلمات السر أو الألعاب أو ملفات الحفظ.\n• الحساسات من مكتبة LibreHardwareMonitor المفتوحة المصدر، وعداد FPS من أحداث Windows (ETW) بدون حقن.", 12.5, "TextDim", null, TextWrapping.Wrap).M(0, 14, 0, 14),
             Ui.HStack(10,
                 Ui.Btn("فتح مجلد السجلات", "", () => Util.OpenFolder(Path.Combine(Util.DataDir, "logs")), "BtnGhost"),
+                Ui.Btn("تحقق من التحديثات", "\uE895", () => _ = UpdateUi.CheckAndPrompt(false)),
                 Ui.Btn("فتح مجلد البيانات والنسخ الاحتياطية", "", () => Util.OpenFolder(Util.DataDir), "BtnGhost"))));
-        var head = Ui.VStack(Ui.Title("السجل وحول البرنامج"), about.M(0, 14, 0, 14), Ui.Txt("سجل العمليات (مباشر)", 15, "Text", FontWeights.Bold).M(0, 0, 0, 8));
+        var autoUpd = Ui.Check(Ui.Txt("تحقق من التحديثات تلقائياً عند التشغيل", 12.5, "TextDim"), Settings.Current.AutoUpdateCheck, v => { Settings.Current.AutoUpdateCheck = v; Settings.Save(); });
+        var head = Ui.VStack(Ui.Title("السجل وحول البرنامج"), about.M(0, 14, 0, 8), autoUpd.M(0, 0, 0, 14), Ui.Txt("سجل العمليات (مباشر)", 15, "Text", FontWeights.Bold).M(0, 0, 0, 8));
         Children.Add(head);
 
         sv = Ui.Scroll(list);
