@@ -111,7 +111,7 @@ public class CleanerPage : PageBase
         g.Margin = new Thickness(0, 7, 0, 7);
         g.Background = Brushes.Transparent;
         g.Cursor = System.Windows.Input.Cursors.Hand;
-        g.MouseLeftButtonUp += (_, e) => { if (e.OriginalSource is not CheckBox) r.Check.IsChecked = r.Check.IsChecked != true; };
+        g.MouseLeftButtonUp += (_, e) => { if (!r.Check.IsMouseOver) r.Check.IsChecked = r.Check.IsChecked != true; };
         return g;
     }
 

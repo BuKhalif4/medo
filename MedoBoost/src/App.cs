@@ -43,7 +43,14 @@ public static class Program
         HardwareMonitor.Instance.Start();
         Task.Run(() => FpsMonitor.Instance.Start());
 
-        var win = new MainWindow();
+        MainWindow win;
+        try { win = new MainWindow(); }
+        catch (Exception ex)
+        {
+            Log.Error("Startup: " + ex);
+            MessageBox.Show("تعذر تشغيل الواجهة:\n" + ex.Message + "\n\nالسجل: " + Log.FilePath, "MEDO Boost", MessageBoxButton.OK, MessageBoxImage.Error);
+            return 1;
+        }
         GameBoost.StartAutoPriority();
         if (selfTest) win.Loaded += (_, _) => _ = SelfTest(win, args.Length > 1 ? args[1] : "selftest");
         int code = app.Run(win);

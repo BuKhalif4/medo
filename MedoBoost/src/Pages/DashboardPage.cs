@@ -20,6 +20,7 @@ public class DashboardPage : PageBase
     readonly TextBlock tweakText = Ui.Txt("...", 14, "Text", FontWeights.SemiBold);
     readonly TextBlock startupText = Ui.Txt("...", 14, "Text", FontWeights.SemiBold);
     readonly Border pawnHint;
+    readonly TextBlock cpuNameT = Ui.Txt("", 12, "TextMute"), gpuNameT = Ui.Txt("", 12, "TextMute");
     bool visible, scored;
 
     public DashboardPage()
@@ -89,8 +90,7 @@ public class DashboardPage : PageBase
         pawnHint.Background = Ui.Solid("#22F59E0B");
         var sensCard = Ui.Card(Ui.VStack(
             Ui.Txt("الحساسات والحرارة", 14, "Text", FontWeights.SemiBold).M(0, 0, 0, 12),
-            Ui.Txt(string.IsNullOrEmpty(hw.CpuName) ? "" : hw.CpuName, 12, "TextMute"),
-            Ui.Txt(string.IsNullOrEmpty(hw.GpuName) ? "" : hw.GpuName, 12, "TextMute").M(0, 0, 0, 10),
+            cpuNameT, gpuNameT.M(0, 0, 0, 10),
             sensGrid, pawnHint));
 
         var quick = Ui.Card(Ui.VStack(
@@ -193,6 +193,8 @@ public class DashboardPage : PageBase
             double v = k == "cpuTemp" ? s.CpuTemp : k == "gpuTemp" ? s.GpuTemp : s.GpuHotSpot;
             sensors[k].Foreground = double.IsNaN(v) ? Ui.B("Text") : new SolidColorBrush(Ui.Heat(v, 75, 88));
         }
+        cpuNameT.Text = HardwareMonitor.Instance.CpuName;
+        gpuNameT.Text = HardwareMonitor.Instance.GpuName;
         pawnHint.Visibility = double.IsNaN(s.CpuTemp) && !HardwareMonitor.Instance.PawnIoInstalled ? Visibility.Visible : Visibility.Collapsed;
     }
 
