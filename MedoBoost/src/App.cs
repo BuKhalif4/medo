@@ -108,9 +108,9 @@ public static class Program
             try { after = t.IsApplied().ToString(); } catch (Exception ex) { err += " check:" + ex.Message; }
             try { t.Revert(); } catch (Exception ex) { err += " revert:" + ex.Message; }
             try { reverted = t.IsApplied().ToString(); } catch { }
-            bool pass = after == "True" && err.Length == 0;
+            bool pass = after == "True" && err.Length == 0 && reverted == before;
             if (pass) ok++; else bad++;
-            W($"{(pass ? "PASS" : "FAIL")} {t.Id,-18} before={before} after={after} reverted={reverted}{err}");
+            W($"{(pass ? "PASS" : "FAIL")} {t.Id,-18} before={before} after={after} reverted={reverted}{(reverted != before ? " (revert mismatch)" : "")}{err}");
         }
         W($"tweaks: {ok} pass, {bad} fail");
         W("");

@@ -406,7 +406,8 @@ public static class Tweaks
         IsApplied = () =>
         {
             var existing = services.Where(ServiceExists).ToList();
-            return existing.Count > 0 && existing.All(s => Reg.Equal(Reg.Get("HKLM", $@"SYSTEM\CurrentControlSet\Services\{s}", "Start"), 4));
+            // a service that isn't installed can't run → counts as "off"
+            return existing.All(s => Reg.Equal(Reg.Get("HKLM", $@"SYSTEM\CurrentControlSet\Services\{s}", "Start"), 4));
         },
         Apply = () =>
         {
@@ -426,9 +427,8 @@ public static class Tweaks
             {
                 var key = "svc|" + s;
                 var b = Backup.Get(key);
-                int start = b != null && int.TryParse(b.Value, out var v) ? v : 3;
-                if (start == 4) start = 3;
-                string mode = start switch { 2 => "auto", 3 => "demand", _ => "demand" };
+                int start = b != null && int.TryParse(b.Value, out var v) ? v : 3;   // no backup → Windows default (manual)
+                string mode = start switch { 2 => "auto", 4 => "disabled", _ => "demand" };
                 var r = Util.Run("sc.exe", $"config {s} start= {mode}", 30000);
                 if (r.code != 0) Reg.Set("HKLM", $@"SYSTEM\CurrentControlSet\Services\{s}", "Start", start, RegistryValueKind.DWord);
                 if (start == 2) Util.Run("sc.exe", $"start {s}", 30000);
@@ -551,9 +551,11 @@ public static class Tweaks
     {
         try { Reg.Set("HKLM", @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore", "SystemRestorePointCreationFrequency", 0, RegistryValueKind.DWord); } catch { }
         var drive = Util.SystemDrive;
-        var r = Util.PowerShell($"Enable-ComputerRestore -Drive '{drive}' -ErrorAction SilentlyContinue; Checkpoint-Computer -Description 'MEDO Boost' -RestorePointType 'MODIFY_SETTINGS' -ErrorAction Stop; 'OK'", 300000);
-        bool ok = r.output.Contains("OK");
-        if (ok) Log.Ok("تم إنشاء نقطة استعادة للنظام"); else Log.Error("Restore point: " + r.output.Trim());
-        return (ok, r.output.Trim());
+        var r = Util.PowerShell($"$ProgressPreference='SilentlyContinue'; try {{ Enable-ComputerRestore -Drive '{drive}' -ErrorAction SilentlyContinue; Checkpoint-Computer -Description 'MEDO Boost' -RestorePointType 'MODIFY_SETTINGS' -ErrorAction Stop; 'RESULT:OK' }} catch {{ 'RESULT:' + $_.Exception.Message }}", 300000);
+        var line = r.output.Split('\n').Select(l => l.Trim()).LastOrDefault(l => l.StartsWith("RESULT:")) ?? "RESULT:" + r.output.Trim();
+        var msg = line["RESULT:".Length..];
+        bool ok = msg == "OK";
+        if (ok) Log.Ok("تم إنشاء نقطة استعادة للنظام"); else Log.Error("Restore point: " + msg);
+        return (ok, ok ? "" : msg);
     }
 }
