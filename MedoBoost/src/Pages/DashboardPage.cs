@@ -36,6 +36,27 @@ public class DashboardPage : PageBase
             Ui.Txt($"{os}   •   {Environment.MachineName}", 13, "TextDim").M(0, 4, 0, 0));
         root.Children.Add(header);
 
+        // ---- full PC specs (like Windows Settings → About)
+        var specsRow1 = new UniformGrid4();
+        var specsRow2 = new UniformGrid4();
+        foreach (var (key, glyph, label) in new[] { ("cpu", "\uE950", "المعالج"), ("ram", "\uE964", "الرام"), ("gpu", "\uE7F4", "كرت الشاشة"), ("disk", "\uEDA2", "التخزين") })
+            specsRow1.Add(SpecCard(key, glyph, label));
+        foreach (var (key, glyph, label) in new[] { ("board", "\uE8EA", "اللوحة الأم"), ("display", "\uE7F8", "الشاشة") })
+            specsRow2.Add(SpecCard(key, glyph, label));
+        var copySpecs = Ui.Btn("نسخ المواصفات", "\uE8C8", () =>
+        {
+            if (specs == null) return;
+            try { System.Windows.Clipboard.SetText(specs.ToString()); Dialogs.Toast("تم نسخ المواصفات ✔"); } catch { }
+        }, "BtnGhost");
+        copySpecs.Padding = new Thickness(12, 6, 12, 6);
+        specsRow2.Add(new Border());
+        specsRow2.Add(copySpecs);
+        copySpecs.VerticalAlignment = VerticalAlignment.Center;
+        copySpecs.HorizontalAlignment = HorizontalAlignment.Left;
+        root.Children.Add(specsRow1.Panel.M(0, 18, 0, 0));
+        root.Children.Add(specsRow2.Panel.M(0, 12, 0, 0));
+        _ = LoadSpecs();
+
         // ---- gauges
         var gauges = new UniformGrid4();
         gauges.Add(GaugeCard(cpuG, "المعالج CPU", ""));
@@ -115,6 +136,35 @@ public class DashboardPage : PageBase
         Ui.Stagger(root, 70);
 
         hw.Updated += s => Dispatcher.BeginInvoke(() => { if (visible) Update(s); });
+    }
+
+    readonly Dictionary<string, (TextBlock value, TextBlock sub)> specCells = new();
+    SystemSpecs specs;
+
+    Border SpecCard(string key, string glyph, string label)
+    {
+        var v = Ui.Txt("...", 15, "Text", FontWeights.Bold, TextWrapping.Wrap);
+        var sub = Ui.Txt("", 11.5, "TextDim", null, TextWrapping.Wrap);
+        specCells[key] = (v, sub);
+        var card = Ui.Card(Ui.VStack(Ui.HStack(8, Ui.Icon(glyph, 13, "Accent2"), Ui.Txt(label, 12, "TextDim")), v.M(0, 8, 0, 4), sub), 14, 12);
+        card.Background = Ui.B("Surface2");
+        return card;
+    }
+
+    async Task LoadSpecs()
+    {
+        specs = await Task.Run(SystemInfo.Read);
+        void Set(string k, string v, string sub) { if (specCells.TryGetValue(k, out var c)) { c.value.Text = v; c.sub.Text = sub; } }
+        Set("cpu", specs.Cpu, specs.CpuSub);
+        Set("ram", specs.Ram, specs.RamSub);
+        Set("gpu", specs.Gpu, specs.GpuSub);
+        Set("disk", specs.Storage, specs.StorageSub);
+        Set("board", specs.Board, specs.BoardSub);
+        Set("display", specs.Display, specs.DisplaySub);
+        if (specs.StorageDetail.Length > 0 && specCells.TryGetValue("disk", out var d)) ((FrameworkElement)d.value.Parent).ToolTip = specs.StorageDetail;
+        // numbers + units must read left-to-right ("16 GB", "1920×1080"); keep them on the right edge like the labels
+        foreach (var k in new[] { "ram", "disk", "display" })
+            if (specCells.TryGetValue(k, out var c)) { c.value.FlowDirection = FlowDirection.LeftToRight; c.value.HorizontalAlignment = HorizontalAlignment.Left; }
     }
 
     static string OsName()

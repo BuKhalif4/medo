@@ -99,7 +99,10 @@ public static class Program
         Directory.CreateDirectory(outDir);
         var r = new System.Text.StringBuilder();
         void W(string l) { r.AppendLine(l); File.WriteAllText(Path.Combine(outDir, "actions.txt"), r.ToString()); }
-        W("=== TWEAKS (applied → verified → reverted) ===");
+        W("=== SYSTEM SPECS ===");
+        try { W(SystemInfo.Read().ToString()); } catch (Exception ex) { W("ERR " + ex); }
+        W("");
+                W("=== TWEAKS (applied → verified → reverted) ===");
         int ok = 0, bad = 0;
         foreach (var t in Tweaks.All)
         {
