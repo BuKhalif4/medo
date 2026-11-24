@@ -285,7 +285,7 @@ public static class Cleaner
             try { long l = f.Length; f.Attributes = FileAttributes.Normal; f.Delete(); freed += l; } catch { item.Skipped++; }
         }
         RemoveEmptyDirs(dir);
-        foreach (var s in services.Reverse()) Util.Run("net", $"start {s}", 60000);
+        foreach (var s in Enumerable.Reverse(services)) Util.Run("net", $"start {s}", 60000);
         return freed;
     }
 
