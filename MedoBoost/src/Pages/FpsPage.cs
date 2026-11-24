@@ -128,7 +128,7 @@ public class FpsPage : PageBase
         var (pid, fps, ft) = FpsMonitor.Instance.Foreground();
         if (pid == Environment.ProcessId)
         {
-            // when MEDO Boost is in front, show the app that rendered most recently
+            // when KHA Boost is in front, show the app that rendered most recently
             fpsBig.Text = "0";
             if (!FpsMonitor.Instance.Running) return;
             appName.Text = "بدّل للعبة – الـ FPS يظهر هنا وفي الأوفرلاي";

@@ -28,7 +28,7 @@ public static class Updater
     static HttpClient Http()
     {
         var h = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
-        h.DefaultRequestHeaders.UserAgent.ParseAdd("MedoBoost-Updater");
+        h.DefaultRequestHeaders.UserAgent.ParseAdd("KHABoost-Updater");
         return h;
     }
 
@@ -47,7 +47,8 @@ public static class Updater
             if (v <= Current) return null;
             foreach (var a in root.GetProperty("assets").EnumerateArray())
             {
-                if (!string.Equals(a.GetProperty("name").GetString(), "MedoBoost.exe", StringComparison.OrdinalIgnoreCase)) continue;
+                var an = a.GetProperty("name").GetString();
+                if (!string.Equals(an, "KHABoost.exe", StringComparison.OrdinalIgnoreCase) && !string.Equals(an, "MedoBoost.exe", StringComparison.OrdinalIgnoreCase)) continue;
                 var notes = root.TryGetProperty("body", out var b) ? b.GetString() ?? "" : "";
                 return new Release(v, tag, notes, a.GetProperty("browser_download_url").GetString(), a.GetProperty("size").GetInt64());
             }
@@ -61,7 +62,7 @@ public static class Updater
     {
         var dir = Path.Combine(Util.DataDir, "update");
         Directory.CreateDirectory(dir);
-        var tmp = Path.Combine(dir, "MedoBoost.new.exe");
+        var tmp = Path.Combine(dir, "KHABoost.new.exe");
         using (var h = Http())
         using (var resp = await h.GetAsync(r.Url, HttpCompletionOption.ResponseHeadersRead))
         {
@@ -82,10 +83,10 @@ public static class Updater
         if (len < 5_000_000) throw new Exception("الملف اللي نزل ناقص – جرّب مرة ثانية");
 
         var exe = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule!.FileName;
-        var backup = Path.Combine(dir, "MedoBoost.previous.exe");
+        var backup = Path.Combine(dir, "KHABoost.previous.exe");
         var script = Path.Combine(dir, "update.cmd");
         int pid = Environment.ProcessId;
-        // wait for MEDO Boost to close, keep the old exe as a backup, put the new one in place, start it
+        // wait for KHA Boost to close, keep the old exe as a backup, put the new one in place, start it
         File.WriteAllText(script, $"""
             @echo off
             :wait

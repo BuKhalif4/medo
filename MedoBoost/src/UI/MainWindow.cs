@@ -33,7 +33,7 @@ public class MainWindow : Window
     public MainWindow()
     {
         Instance = this;
-        Title = "MEDO Boost";
+        Title = "KHA Boost";
         Width = 1280; Height = 800; MinWidth = 1020; MinHeight = 640;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         FlowDirection = FlowDirection.RightToLeft;
@@ -105,7 +105,7 @@ public class MainWindow : Window
 
         var logo = new Image { Source = Ui.Logo(), Width = 42, Height = 42 };
         RenderOptions.SetBitmapScalingMode(logo, BitmapScalingMode.HighQuality);
-        var brand = Ui.VStack(Ui.GradText("MEDO Boost", 21), Ui.Txt("PC Optimizer", 11, "TextMute"));
+        var brand = Ui.VStack(Ui.GradText("KHA Boost", 21), Ui.Txt("PC Optimizer", 11, "TextMute"));
         brand.Margin = new Thickness(12, 0, 0, 0);
         var head = Ui.HStack(0, logo, brand);
         head.Margin = new Thickness(20, 22, 16, 26);

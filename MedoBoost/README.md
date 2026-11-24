@@ -1,6 +1,6 @@
 <p align="center"><img src="Assets/logo.png" width="120"/></p>
 
-# MEDO Boost
+# KHA Boost
 
 برنامج تسريع وتنظيف ومراقبة لجهازك، مصنوع خصيصاً لك. الكود كله هنا وتقدر تقرأه.
 
@@ -51,10 +51,10 @@
 ## التحديث التلقائي
 كل نسخة جديدة تنبنى وتنجرب على ويندوز في GitHub، وبعدها تنزل في [Releases](https://github.com/BuKhalif4/medo/releases).
 البرنامج يتحقق عند التشغيل، وإذا في نسخة أحدث يسألك ← «حدّث الآن» ← يتسكر، يتحدث، ويرجع يفتح.
-النسخة السابقة تنحفظ في `%LOCALAPPDATA%\MedoBoost\update\MedoBoost.previous.exe`.
+النسخة السابقة تنحفظ في `%LOCALAPPDATA%\MedoBoost\update\KHABoost.previous.exe`.
 
 ## البناء من الكود
 ```
 dotnet publish MedoBoost/MedoBoost.csproj -c Release -o out
 ```
-يطلع ملف واحد `out/MedoBoost.exe` (self-contained، ما يحتاج تثبيت .NET).
+يطلع ملف واحد `out/KHABoost.exe` (self-contained، ما يحتاج تثبيت .NET).

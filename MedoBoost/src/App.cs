@@ -24,12 +24,12 @@ public static class Program
         if (!selfTest)
         {
             mutex = new Mutex(true, "MedoBoost-SingleInstance", out bool first);
-            if (!first) { MessageBox.Show("MEDO Boost شغال بالفعل.", "MEDO Boost"); return 0; }
+            if (!first) { MessageBox.Show("KHA Boost شغال بالفعل.", "KHA Boost"); return 0; }
         }
 
         AppDomain.CurrentDomain.UnhandledException += (_, e) => Log.Error("Unhandled: " + e.ExceptionObject);
         Settings.Load();
-        Log.Info("MEDO Boost started");
+        Log.Info("KHA Boost started");
 
         var app = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
         app.DispatcherUnhandledException += (_, e) =>
@@ -50,7 +50,7 @@ public static class Program
         catch (Exception ex)
         {
             Log.Error("Startup: " + ex);
-            MessageBox.Show("تعذر تشغيل الواجهة:\n" + ex.Message + "\n\nالسجل: " + Log.FilePath, "MEDO Boost", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show("تعذر تشغيل الواجهة:\n" + ex.Message + "\n\nالسجل: " + Log.FilePath, "KHA Boost", MessageBoxButton.OK, MessageBoxImage.Error);
             return 1;
         }
         GameBoost.StartAutoPriority();

@@ -21,7 +21,7 @@ public class Tweak
 /// <summary>A single registry value change. Original values are backed up before every change so everything can be reverted.</summary>
 public record RegOp(string Hive, string Path, string Name, object Value, RegistryValueKind Kind = RegistryValueKind.DWord, object Default = null);
 
-/// <summary>Stores original values (before MEDO Boost touched them) in %LOCALAPPDATA%\MedoBoost\backup.json</summary>
+/// <summary>Stores original values (before KHA Boost touched them) in %LOCALAPPDATA%\MedoBoost\backup.json</summary>
 internal static class Backup
 {
     public class Entry { public bool Existed { get; set; } public string Kind { get; set; } public string Value { get; set; } }
@@ -340,7 +340,7 @@ public static class Tweaks
             {
                 Id = "d_wslmem", Category = Categories[5], Name = "تحديد رام WSL و Docker",
                 Description = "WSL و Docker (عملية vmmem) ممكن ياكلوا رامات كثير وما يرجعوها. هذا يحدّد حدهم لنص الرام ويخليهم يرجّعوا الرام الفاضية تلقائياً. يشتغل بعد wsl --shutdown.",
-                IsApplied = () => { try { var f = WslConfigPath; return File.Exists(f) && File.ReadAllText(f).Contains("MEDO Boost"); } catch { return false; } },
+                IsApplied = () => { try { var f = WslConfigPath; return File.Exists(f) && (File.ReadAllText(f).Contains("KHA Boost") || File.ReadAllText(f).Contains("MEDO Boost")); } catch { return false; } },
                 Apply = ApplyWslConfig,
                 Revert = RevertWslConfig,
             },
@@ -374,10 +374,10 @@ public static class Tweaks
         int gb = Math.Max(2, (int)(m.ullTotalPhys / 1073741824UL / 2));
         var lines = File.Exists(f) ? File.ReadAllLines(f).ToList() : new List<string>();
         if (File.Exists(f) && !File.Exists(WslBackupPath)) File.Copy(f, WslBackupPath);
-        lines.RemoveAll(l => l.TrimStart().StartsWith("memory", StringComparison.OrdinalIgnoreCase) || l.TrimStart().StartsWith("autoMemoryReclaim", StringComparison.OrdinalIgnoreCase) || l.Contains("MEDO Boost"));
+        lines.RemoveAll(l => l.TrimStart().StartsWith("memory", StringComparison.OrdinalIgnoreCase) || l.TrimStart().StartsWith("autoMemoryReclaim", StringComparison.OrdinalIgnoreCase) || l.Contains("MEDO Boost") || l.Contains("KHA Boost"));
         int idx = lines.FindIndex(l => l.Trim().Equals("[wsl2]", StringComparison.OrdinalIgnoreCase));
         if (idx < 0) { lines.Insert(0, "[wsl2]"); idx = 0; }
-        lines.Insert(idx + 1, "# MEDO Boost: limit RAM for gaming");
+        lines.Insert(idx + 1, "# KHA Boost: limit RAM for gaming");
         lines.Insert(idx + 2, $"memory={gb}GB");
         int exp = lines.FindIndex(l => l.Trim().Equals("[experimental]", StringComparison.OrdinalIgnoreCase));
         if (exp < 0) { lines.Add(""); lines.Add("[experimental]"); exp = lines.Count - 1; }
@@ -392,7 +392,7 @@ public static class Tweaks
         if (File.Exists(WslBackupPath)) { File.Copy(WslBackupPath, f, true); File.Delete(WslBackupPath); }
         else if (File.Exists(f))
         {
-            var lines = File.ReadAllLines(f).Where(l => !l.Contains("MEDO Boost") && !l.TrimStart().StartsWith("autoMemoryReclaim") && !l.TrimStart().StartsWith("memory=")).ToList();
+            var lines = File.ReadAllLines(f).Where(l => !l.Contains("MEDO Boost") && !l.Contains("KHA Boost") && !l.TrimStart().StartsWith("autoMemoryReclaim") && !l.TrimStart().StartsWith("memory=")).ToList();
             if (lines.All(l => string.IsNullOrWhiteSpace(l) || l.Trim().StartsWith("["))) File.Delete(f); else File.WriteAllLines(f, lines);
         }
         Log.Info(".wslconfig restored");
@@ -528,11 +528,11 @@ public static class Tweaks
             }
             if (!m.Success) { Log.Error("Power plan: " + r.output); throw new Exception("جهازك لا يدعم خطة الأداء العالي (غالباً لابتوب بنظام Modern Standby)."); }
             guid = m.Value.ToLowerInvariant();
-            Util.Run("powercfg.exe", $"-changename {guid} \"MEDO Ultimate Performance\"", 15000);
+            Util.Run("powercfg.exe", $"-changename {guid} \"KHA Ultimate Performance\"", 15000);
             Backup.Set("power|created", new Backup.Entry { Existed = true, Kind = "String", Value = guid });
         }
         Util.Run("powercfg.exe", $"/setactive {guid}", 15000);
-        Log.Ok("Power plan → MEDO Ultimate Performance");
+        Log.Ok("Power plan → KHA Ultimate Performance");
     }
 
     static void RevertPowerPlan()
@@ -551,7 +551,7 @@ public static class Tweaks
     {
         try { Reg.Set("HKLM", @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore", "SystemRestorePointCreationFrequency", 0, RegistryValueKind.DWord); } catch { }
         var drive = Util.SystemDrive;
-        var r = Util.PowerShell($"$ProgressPreference='SilentlyContinue'; try {{ Enable-ComputerRestore -Drive '{drive}' -ErrorAction SilentlyContinue; Checkpoint-Computer -Description 'MEDO Boost' -RestorePointType 'MODIFY_SETTINGS' -ErrorAction Stop; 'RESULT:OK' }} catch {{ 'RESULT:' + $_.Exception.Message }}", 300000);
+        var r = Util.PowerShell($"$ProgressPreference='SilentlyContinue'; try {{ Enable-ComputerRestore -Drive '{drive}' -ErrorAction SilentlyContinue; Checkpoint-Computer -Description 'KHA Boost' -RestorePointType 'MODIFY_SETTINGS' -ErrorAction Stop; 'RESULT:OK' }} catch {{ 'RESULT:' + $_.Exception.Message }}", 300000);
         var line = r.output.Split('\n').Select(l => l.Trim()).LastOrDefault(l => l.StartsWith("RESULT:")) ?? "RESULT:" + r.output.Trim();
         var msg = line["RESULT:".Length..];
         bool ok = msg == "OK";

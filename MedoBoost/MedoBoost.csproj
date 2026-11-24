@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- MEDO Boost - Windows optimizer, cleaner and performance monitor.
+  <!-- KHA Boost - Windows optimizer, cleaner and performance monitor.
        Built as a code-first WPF app so it can be compiled from Windows, Linux or CI. -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -10,14 +10,14 @@
     <LangVersion>latest</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>MedoBoost</RootNamespace>
-    <AssemblyName>MedoBoost</AssemblyName>
+    <AssemblyName>KHABoost</AssemblyName>
     <ApplicationIcon>Assets\logo.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Version>1.0.0</Version>
-    <Product>MEDO Boost</Product>
-    <Company>MEDO</Company>
-    <Description>MEDO Boost - PC optimizer</Description>
-    <Copyright>MEDO</Copyright>
+    <Product>KHA Boost</Product>
+    <Company>KHA</Company>
+    <Description>KHA Boost - PC optimizer</Description>
+    <Copyright>KHA</Copyright>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>

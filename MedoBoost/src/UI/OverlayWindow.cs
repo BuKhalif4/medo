@@ -34,7 +34,7 @@ public class OverlayWindow : Window
         SizeToContent = SizeToContent.WidthAndHeight;
         FlowDirection = FlowDirection.LeftToRight;
         FontFamily = new FontFamily("Segoe UI");
-        Title = "MEDO Overlay";
+        Title = "KHA Overlay";
 
         panel = new Border
         {

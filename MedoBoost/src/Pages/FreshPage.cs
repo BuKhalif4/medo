@@ -251,7 +251,7 @@ public class FreshPage : PageBase
             Step("خلصنا! 🎉 أعد تشغيل الجهاز عشان كل التويكات تشتغل.", "ok");
             Log.Ok("=== البروفايل اكتمل ===");
             if (await Dialogs.Confirm("خلصنا 🎉", "كل الخطوات اكتملت. لازم تعيد تشغيل الجهاز عشان HAGS وخطة الطاقة وباقي التويكات تشتغل.\nتعيد التشغيل الحين؟", "أعد التشغيل", false, "بعدين"))
-                Util.Run("shutdown.exe", "/r /t 5 /c \"MEDO Boost\"", 10000);
+                Util.Run("shutdown.exe", "/r /t 5 /c \"KHA Boost\"", 10000);
         }
         catch (Exception ex)
         {
