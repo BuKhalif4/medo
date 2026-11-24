@@ -26,10 +26,9 @@ public class TweaksPage : PageBase
         var applyRec = Ui.Btn("تطبيق المنصوح به", "", async () => await ApplyRecommended());
         var revertAll = Ui.Btn("إرجاع كل شي للأصل", "", async () => await RevertAll(), "BtnGhost");
 
-        var info = Ui.Card(Ui.HStack(12, Ui.Icon("", 22, "Good"),
+        var info = Ui.Card(Ui.Cols(new[] { "Auto", "*" }, Ui.Icon("", 22, "Good").M(0, 0, 12, 0),
             Ui.Txt("كل تويك يحفظ القيمة الأصلية قبل التعديل، وتقدر ترجعه بإطفاء المفتاح. ننصح بإنشاء نقطة استعادة قبل أول مرة. التويكات المعلّمة «منصوح» آمنة ومجربة.", 12.5, "TextDim", null, TextWrapping.Wrap)), 14);
         info.Background = Ui.Solid("#1422C55E");
-        ((StackPanel)info.Child).Children[1].SetValue(FrameworkElement.MaxWidthProperty, 860.0);
 
         var head = Ui.VStack(
             Ui.Title("تسريع وتويكات"),

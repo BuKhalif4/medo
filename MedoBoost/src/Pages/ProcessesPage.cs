@@ -26,7 +26,7 @@ public class ProcessesPage : PageBase
     readonly Dictionary<string, RowUi> rows = new();
     readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromSeconds(2) };
     readonly TextBox search = new() { Style = Ui.S("Input"), Width = 240 };
-    readonly TextBlock ramSummary = Ui.Txt("", 13, "TextDim");
+    readonly TextBlock ramSummary = Ui.Txt("", 13, "TextDim").Ltr();
     readonly ProgressBar ramBar = Ui.Progress();
     readonly TextBlock countText = Ui.Txt("", 12, "TextMute");
     bool showSystem, refreshing;
@@ -155,9 +155,11 @@ public class ProcessesPage : PageBase
         r.Title = Ui.Txt(g.Title, 13.5, "Text", FontWeights.SemiBold);
         r.Title.TextTrimming = TextTrimming.CharacterEllipsis;
         r.Sub = Ui.Txt("", 11.5, "TextMute");
-        r.Ram = Ui.Txt("", 13, "Text", FontWeights.SemiBold);
+        r.Ram = Ui.Txt("", 13, "Text", FontWeights.SemiBold).Ltr();
+        r.Ram.HorizontalAlignment = HorizontalAlignment.Right;
         r.RamBar = Ui.Progress(); r.RamBar.Height = 4; r.RamBar.Width = 120; r.RamBar.HorizontalAlignment = HorizontalAlignment.Left;
-        r.Cpu = Ui.Txt("", 13); r.Gpu = Ui.Txt("", 13);
+        r.Cpu = Ui.Txt("", 13).Ltr(); r.Gpu = Ui.Txt("", 13).Ltr();
+        r.Cpu.HorizontalAlignment = r.Gpu.HorizontalAlignment = HorizontalAlignment.Right;
 
         var trim = SmallBtn("", null, async () =>
         {

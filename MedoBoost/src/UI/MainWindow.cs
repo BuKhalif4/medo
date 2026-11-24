@@ -97,7 +97,7 @@ public class MainWindow : Window
 
         var logo = new Image { Source = Ui.Logo(), Width = 42, Height = 42 };
         RenderOptions.SetBitmapScalingMode(logo, BitmapScalingMode.HighQuality);
-        var brand = Ui.VStack(Ui.GradText("MEDO Boost", 21), Ui.Txt("Optimizer • Cleaner • Monitor", 10.5, "TextMute"));
+        var brand = Ui.VStack(Ui.GradText("MEDO Boost", 21), Ui.Txt("PC Optimizer", 11, "TextMute"));
         brand.Margin = new Thickness(12, 0, 0, 0);
         var head = Ui.HStack(0, logo, brand);
         head.Margin = new Thickness(20, 22, 16, 26);
@@ -124,7 +124,7 @@ public class MainWindow : Window
         Nav("log", "", "السجل وحول");
 
         // mini monitor at the bottom of the sidebar
-        miniCpu = Ui.Txt("0%", 12, "Text", FontWeights.SemiBold); miniRam = Ui.Txt("0%", 12, "Text", FontWeights.SemiBold);
+        miniCpu = Ui.Txt("0%", 12, "Text", FontWeights.SemiBold).Ltr(); miniRam = Ui.Txt("0%", 12, "Text", FontWeights.SemiBold).Ltr();
         miniCpuBar = Ui.Progress(); miniRamBar = Ui.Progress();
         miniCpuBar.Height = 5; miniRamBar.Height = 5;
         var mini = Ui.VStack(

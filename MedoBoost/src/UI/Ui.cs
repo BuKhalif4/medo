@@ -38,6 +38,9 @@ public static class Ui
     public static TextBlock Txt(string text, double size = 13, string brush = "Text", FontWeight? weight = null, TextWrapping wrap = TextWrapping.NoWrap)
         => new() { Text = text, FontSize = size, Foreground = B(brush), FontWeight = weight ?? FontWeights.Normal, TextWrapping = wrap, VerticalAlignment = VerticalAlignment.Center };
 
+    /// <summary>Numbers/units must render left-to-right inside the Arabic UI ("88%" not "%88").</summary>
+    public static T Ltr<T>(this T fe) where T : FrameworkElement { fe.FlowDirection = FlowDirection.LeftToRight; return fe; }
+
     public static TextBlock Title(string text, double size = 26) => new()
     {
         Text = text, FontSize = size, FontWeight = FontWeights.Bold, Foreground = B("Text"),

@@ -12,13 +12,13 @@ public class DashboardPage : PageBase
     readonly RingGauge cpuG = new(), gpuG = new("#FF22C55E", "#FF06B6D4", "#FF3B82F6"), ramG = new("#FFF472B6", "#FFEC4899", "#FF8B5CF6"), diskG = new("#FFF59E0B", "#FFEC4899", "#FF8B5CF6");
     readonly Sparkline loadChart = new("#FF8B5CF6", "#FF22C55E");
     readonly Sparkline netChart = new("#FF06B6D4", "#FFEC4899") { FixedMax = 0 };
-    readonly TextBlock netText = Ui.Txt("", 12, "TextDim");
+    readonly TextBlock netText = Ui.Txt("", 12, "TextDim").Ltr();
     readonly Dictionary<string, TextBlock> sensors = new();
     readonly TextBlock scoreText = Ui.GradText("--", 46);
     readonly TextBlock scoreSub = Ui.Txt("جاري فحص الجهاز...", 13, "TextDim");
-    readonly TextBlock junkText = Ui.Txt("...", 14, "Text", FontWeights.SemiBold);
-    readonly TextBlock tweakText = Ui.Txt("...", 14, "Text", FontWeights.SemiBold);
-    readonly TextBlock startupText = Ui.Txt("...", 14, "Text", FontWeights.SemiBold);
+    readonly TextBlock junkText = Ui.Txt("...", 14, "Text", FontWeights.SemiBold).Ltr();
+    readonly TextBlock tweakText = Ui.Txt("...", 14, "Text", FontWeights.SemiBold).Ltr();
+    readonly TextBlock startupText = Ui.Txt("...", 14, "Text", FontWeights.SemiBold).Ltr();
     readonly Border pawnHint;
     readonly TextBlock cpuNameT = Ui.Txt("", 12, "TextMute"), gpuNameT = Ui.Txt("", 12, "TextMute");
     bool visible, scored;
@@ -47,18 +47,19 @@ public class DashboardPage : PageBase
 
         // ---- charts + score
         var loadCard = Ui.Card(Ui.VStack(
-            Ui.Cols(new[] { "*", "Auto" }, Ui.Txt("استهلاك المعالج والكرت (آخر 60 ثانية)", 14, "Text", FontWeights.SemiBold),
+            Ui.Cols(new[] { "*", "Auto" }, Ui.Txt("المعالج والكرت", 14, "Text", FontWeights.SemiBold),
                 Ui.HStack(12, Legend("#FF8B5CF6", "CPU"), Legend("#FF22C55E", "GPU"))),
             loadChart.M(0, 14, 0, 0)));
         var netCard = Ui.Card(Ui.VStack(
             Ui.Cols(new[] { "*", "Auto" }, Ui.Txt("الشبكة", 14, "Text", FontWeights.SemiBold), Ui.HStack(12, Legend("#FF06B6D4", "تحميل"), Legend("#FFEC4899", "رفع"))),
             netChart.M(0, 14, 0, 0), netText.M(0, 8, 0, 0)));
 
-        var scoreBtn = Ui.Btn("تحسين بضغطة واحدة", "", async () => await OneClick());
-        scoreBtn.HorizontalAlignment = HorizontalAlignment.Left;
+        var scoreBtn = Ui.Btn("تحسين الآن", "", async () => await OneClick());
+        scoreBtn.HorizontalAlignment = HorizontalAlignment.Stretch;
+        scoreBtn.ToolTip = "نقطة استعادة + التويكات المنصوح بها + تنظيف + تحرير رام";
         var scoreCard = Ui.Card(Ui.VStack(
             Ui.Txt("صحة الجهاز", 14, "Text", FontWeights.SemiBold),
-            Ui.HStack(6, scoreText, Ui.Txt("/100", 16, "TextMute")).M(0, 6, 0, 0),
+            Ui.HStack(6, scoreText, Ui.Txt("/100", 16, "TextMute")).Ltr().M(0, 6, 0, 0),
             scoreSub,
             Ui.Sep(),
             Row("", "ملفات زائدة", junkText), Row("", "تويكات مفعلة", tweakText), Row("", "برامج بدء التشغيل", startupText),
@@ -76,7 +77,8 @@ public class DashboardPage : PageBase
             ("gpuPower", "طاقة الكرت", ""), ("vram", "ذاكرة الكرت VRAM", ""), ("gpuFan", "مروحة الكرت", ""),
         })
         {
-            var v = Ui.Txt("—", 17, "Text", FontWeights.Bold);
+            var v = Ui.Txt("—", 17, "Text", FontWeights.Bold).Ltr();
+            v.HorizontalAlignment = HorizontalAlignment.Right;
             sensors[k] = v;
             var cell = Ui.Card(Ui.VStack(Ui.Txt(label, 12, "TextDim"), v.M(0, 4, 0, 0)), 14, 12);
             cell.Width = 150; cell.Margin = new Thickness(0, 0, 10, 10); cell.Background = Ui.B("Surface2");

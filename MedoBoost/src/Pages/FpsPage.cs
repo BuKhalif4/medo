@@ -53,7 +53,7 @@ public class FpsPage : PageBase
             for (int i = 0; i < labels.Length; i++)
             {
                 int idx = i;
-                var rb = new RadioButton { Style = Ui.S("Pill"), Content = labels[i], GroupName = group, IsChecked = i == selected };
+                var rb = new RadioButton { Style = Ui.S("Pill"), Content = labels[i].EndsWith("%") ? new TextBlock { Text = labels[i], FlowDirection = FlowDirection.LeftToRight } : labels[i], GroupName = group, IsChecked = i == selected };
                 rb.Checked += (_, _) => on(idx);
                 wp.Children.Add(rb);
             }
@@ -75,7 +75,7 @@ public class FpsPage : PageBase
         Metric("الساعة", s.ShowClock, v => s.ShowClock = v);
 
         var overlayCard = Ui.Card(Ui.VStack(
-            Ui.Cols(new[] { "*", "Auto" }, Ui.VStack(Ui.Txt("أوفرلاي فوق الشاشة", 15, "Text", FontWeights.Bold), Ui.Txt("اختصار: Ctrl + Shift + F  (يشتغل فوق الألعاب بوضع Borderless / Windowed)", 12, "TextDim")), overlaySwitch),
+            Ui.Cols(new[] { "*", "Auto" }, Ui.VStack(Ui.Txt("أوفرلاي فوق الشاشة", 15, "Text", FontWeights.Bold), Ui.Txt("اختصار Ctrl+Shift+F – يظهر فوق الألعاب بوضع Borderless أو Windowed", 12, "TextDim", null, TextWrapping.Wrap).M(0, 2, 12, 0)), overlaySwitch),
             Ui.Sep(),
             Ui.Txt("المكان", 12.5, "TextDim").M(0, 0, 0, 6),
             Pills(new[] { "فوق يسار", "فوق يمين", "تحت يسار", "تحت يمين" }, s.OverlayCorner, i => { s.OverlayCorner = i; Changed(); }),
@@ -96,7 +96,7 @@ public class FpsPage : PageBase
         compare.Background = Ui.B("Surface2");
         var benchCard = Ui.Card(Ui.VStack(
             Ui.Txt("قياس الأداء (Benchmark)", 15, "Text", FontWeights.Bold),
-            Ui.Txt("1) اختر «قبل» واقِس وانت تلعب   2) نظّف وطبق التويكات   3) اختر «بعد» وقِس بنفس المكان باللعبة   ← نقارن لك النتائج.\nداخل اللعبة اضغط Ctrl + Shift + B للبدء/الإيقاف.", 12, "TextDim", null, TextWrapping.Wrap).M(0, 4, 0, 12),
+            Ui.Txt("• اختر «قبل» واقِس وانت تلعب\n• نظّف وطبّق التويكات\n• اختر «بعد» واقِس بنفس المكان باللعبة\n• داخل اللعبة: Ctrl+Shift+B للبدء والإيقاف", 12, "TextDim", null, TextWrapping.Wrap).M(0, 4, 0, 12),
             Ui.Txt("اسم القياس", 12.5, "TextDim").M(0, 0, 0, 6),
             Pills(new[] { "قبل", "بعد" }, s.BenchLabel == "بعد" ? 1 : 0, i => { s.BenchLabel = i == 0 ? "قبل" : "بعد"; Settings.Save(); }),
             Ui.Txt("المدة", 12.5, "TextDim").M(0, 8, 0, 6),

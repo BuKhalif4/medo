@@ -19,7 +19,7 @@ public class CleanerPage : PageBase
 
     readonly List<Row> rows = new();
     readonly Dictionary<string, TextBlock> catTotals = new();
-    readonly TextBlock bigTotal = Ui.GradText("0 B", 40);
+    readonly TextBlock bigTotal = Ui.GradText("0 B", 40).Ltr();
     readonly TextBlock status = Ui.Txt("اضغط «فحص» لمعرفة حجم الملفات الزائدة", 13, "TextDim");
     readonly ProgressBar progress = Ui.Progress();
     readonly Button scanBtn, cleanBtn;
@@ -61,7 +61,7 @@ public class CleanerPage : PageBase
             var items = Cleaner.Items.Where(i => i.Category == cat).ToList();
             if (items.Count == 0) continue;
             var body = new StackPanel();
-            var catTotal = Ui.Txt("", 13, "Accent2", FontWeights.SemiBold);
+            var catTotal = Ui.Txt("", 13, "Accent2", FontWeights.SemiBold).Ltr();
             catTotals[cat] = catTotal;
             var catRows = new List<Row>();
             foreach (var it in items) { var r = BuildRow(it); catRows.Add(r); rows.Add(r); body.Children.Add(RowUi(r)); }
@@ -86,7 +86,7 @@ public class CleanerPage : PageBase
     {
         var s = Settings.Current;
         bool on = s.CleanerChecked.Contains(it.Id) || (it.DefaultOn && !s.CleanerUnchecked.Contains(it.Id));
-        var r = new Row { Item = it, Size = Ui.Txt(it.NoSizeInfo ? "" : "—", 13, "TextDim", FontWeights.SemiBold) };
+        var r = new Row { Item = it, Size = Ui.Txt(it.NoSizeInfo ? "" : "—", 13, "TextDim", FontWeights.SemiBold).Ltr() };
         r.Check = Ui.Check(null, on, v =>
         {
             s.CleanerChecked.Remove(it.Id); s.CleanerUnchecked.Remove(it.Id);
