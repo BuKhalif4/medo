@@ -1,0 +1,45 @@
+name: MEDO Boost build
+
+on:
+  push:
+    paths:
+      - 'MedoBoost/**'
+      - '.github/workflows/medoboost.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish single-file exe
+        run: dotnet publish MedoBoost/MedoBoost.csproj -c Release -o out
+
+      - name: Self-test (open every page, take screenshots)
+        shell: pwsh
+        run: |
+          $shots = Join-Path $PWD 'shots'
+          $p = Start-Process -FilePath 'out\MedoBoost.exe' -ArgumentList '--selftest', "`"$shots`"" -PassThru
+          if (-not $p.WaitForExit(180000)) { $p.Kill(); Write-Error 'self-test timed out' }
+          Write-Host "exit code: $($p.ExitCode)"
+          Get-ChildItem $shots | Format-Table Name, Length
+          if (Test-Path "$shots\error.txt") { Get-Content "$shots\error.txt" }
+          if (Test-Path "$shots\log.txt") { Get-Content "$shots\log.txt" }
+          Get-ChildItem "$env:LOCALAPPDATA\MedoBoost\logs" -ErrorAction SilentlyContinue | ForEach-Object { Get-Content $_.FullName -Tail 80 }
+          if ($p.ExitCode -ne 0) { exit 1 }
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: shots
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MedoBoost-exe
+          path: out/MedoBoost.exe
