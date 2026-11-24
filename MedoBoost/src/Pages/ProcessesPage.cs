@@ -159,7 +159,7 @@ public class ProcessesPage : PageBase
         r.Ram.HorizontalAlignment = HorizontalAlignment.Right;
         r.RamBar = Ui.Progress(); r.RamBar.Height = 4; r.RamBar.Width = 120; r.RamBar.HorizontalAlignment = HorizontalAlignment.Left;
         r.Cpu = Ui.Txt("", 13).Ltr(); r.Gpu = Ui.Txt("", 13).Ltr();
-        r.Cpu.HorizontalAlignment = r.Gpu.HorizontalAlignment = HorizontalAlignment.Right;
+        r.Cpu.HorizontalAlignment = r.Gpu.HorizontalAlignment = HorizontalAlignment.Left;
 
         var trim = SmallBtn("", null, async () =>
         {

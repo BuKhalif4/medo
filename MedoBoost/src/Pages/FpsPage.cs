@@ -12,7 +12,7 @@ namespace MedoBoost.Pages;
 
 public class FpsPage : PageBase
 {
-    readonly TextBlock fpsBig = Ui.GradText("—", 64);
+    readonly TextBlock fpsBig = Ui.GradText("0", 64);
     readonly TextBlock appName = Ui.Txt("افتح لعبة لعرض الـ FPS", 14, "TextDim");
     readonly TextBlock frameTime = Ui.Txt("", 13, "TextDim");
     readonly Sparkline fpsChart = new("#FF22D3EE") { FixedMax = 0, Height = 140 };
@@ -129,12 +129,12 @@ public class FpsPage : PageBase
         if (pid == Environment.ProcessId)
         {
             // when MEDO Boost is in front, show the app that rendered most recently
-            fpsBig.Text = "—";
+            fpsBig.Text = "0";
             if (!FpsMonitor.Instance.Running) return;
             appName.Text = "بدّل للعبة – الـ FPS يظهر هنا وفي الأوفرلاي";
             return;
         }
-        fpsBig.Text = fps > 0 ? $"{fps:0}" : "—";
+        fpsBig.Text = fps > 0 ? $"{fps:0}" : "0";
         frameTime.Text = fps > 0 ? $"{ft:0.0} ms لكل فريم" : "";
         try { appName.Text = fps > 0 ? Process.GetProcessById(pid).ProcessName + ".exe" : "التطبيق الحالي لا يرسم فريمات"; } catch { }
         fpsChart.Push(fps);
