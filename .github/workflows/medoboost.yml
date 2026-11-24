@@ -36,6 +36,14 @@ jobs:
           Get-ChildItem "$env:LOCALAPPDATA\MedoBoost\logs" -ErrorAction SilentlyContinue | ForEach-Object { Get-Content $_.FullName -Tail 80 }
           if ($p.ExitCode -ne 0) { exit 1 }
 
+      - name: Action test (really apply/revert tweaks, debloat, clean - throwaway VM)
+        shell: pwsh
+        run: |
+          $dir = Join-Path $PWD 'actions'
+          $p = Start-Process -FilePath 'out\MedoBoost.exe' -ArgumentList '--actiontest', "`"$dir`"" -PassThru
+          if (-not $p.WaitForExit(900000)) { $p.Kill(); Write-Host 'action test timed out' }
+          Get-Content "$dir\actions.txt"
+
       - name: Save screenshots to the branch (for UI review)
         if: always() && github.event_name == 'push' && !contains(github.event.head_commit.message, '[screens]')
         shell: pwsh

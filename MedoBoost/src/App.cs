@@ -19,6 +19,7 @@ public static class Program
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 
+        if (args.Length > 0 && args[0] == "--actiontest") return ActionTest(args.Length > 1 ? args[1] : "actiontest");
         bool selfTest = args.Length > 0 && args[0] == "--selftest";
         if (!selfTest)
         {
@@ -89,6 +90,58 @@ public static class Program
             File.WriteAllText(Path.Combine(outDir, "error.txt"), ex.ToString());
             Application.Current.Shutdown(2);
         }
+    }
+
+    /// <summary>CI only (throwaway VM): really applies, verifies and reverts every tweak, removes apps, cleans. Writes a report.</summary>
+    static int ActionTest(string outDir)
+    {
+        Directory.CreateDirectory(outDir);
+        var r = new System.Text.StringBuilder();
+        void W(string l) { r.AppendLine(l); File.WriteAllText(Path.Combine(outDir, "actions.txt"), r.ToString()); }
+        W("=== TWEAKS (applied → verified → reverted) ===");
+        int ok = 0, bad = 0;
+        foreach (var t in Tweaks.All)
+        {
+            string before = "?", after = "?", reverted = "?", err = "";
+            try { before = t.IsApplied().ToString(); } catch (Exception ex) { err += " isApplied:" + ex.Message; }
+            try { t.Apply(); } catch (Exception ex) { err += " apply:" + ex.Message; }
+            try { after = t.IsApplied().ToString(); } catch (Exception ex) { err += " check:" + ex.Message; }
+            try { t.Revert(); } catch (Exception ex) { err += " revert:" + ex.Message; }
+            try { reverted = t.IsApplied().ToString(); } catch { }
+            bool pass = after == "True" && err.Length == 0;
+            if (pass) ok++; else bad++;
+            W($"{(pass ? "PASS" : "FAIL")} {t.Id,-18} before={before} after={after} reverted={reverted}{err}");
+        }
+        W($"tweaks: {ok} pass, {bad} fail");
+        W("");
+        W("=== RESTORE POINT ===");
+        try { var (rp, msg) = Tweaks.CreateRestorePoint(); W($"{rp}: {msg}"); } catch (Exception ex) { W("ERR " + ex.Message); }
+        W("");
+        W("=== DEBLOAT ===");
+        try
+        {
+            Debloat.RefreshInstalled();
+            foreach (var a in Debloat.Apps.Where(a => a.Installed))
+                W($"{a.Id}: installed → remove={(a.DefaultOn ? Debloat.Remove(a).ToString() : "skipped (optional)")}");
+            W("OneDrive installed: " + Debloat.OneDriveInstalled());
+        }
+        catch (Exception ex) { W("ERR " + ex); }
+        W("");
+        W("=== CLEANER ===");
+        using (var w = new StreamWriter(Path.Combine(outDir, "deleted.txt")))
+            foreach (var i in Cleaner.Items.Where(i => i.DefaultOn))
+            {
+                try { Cleaner.Scan(i); long size = i.Size; Cleaner.Clean(i, w); W($"{i.Id,-18} found={Util.Size(size)} freed={Util.Size(i.Freed)} skipped={i.Skipped}"); }
+                catch (Exception ex) { W($"{i.Id} ERR {ex.Message}"); }
+            }
+        W("");
+        W("=== MEMORY / STARTUP / PROCESSES ===");
+        try { W("RAM freed: " + Util.Size(Memory.CleanAll())); } catch (Exception ex) { W("RAM ERR " + ex.Message); }
+        try { W("Startup entries: " + StartupManager.List().Count); } catch (Exception ex) { W("Startup ERR " + ex.Message); }
+        try { var g = ProcessManager.Instance.Snapshot(false); Thread.Sleep(1000); g = ProcessManager.Instance.Snapshot(false); W($"Process groups: {g.Count}, top: {string.Join(", ", g.OrderByDescending(x => x.Ram).Take(3).Select(x => x.Name + " " + Util.Size(x.Ram)))}"); }
+        catch (Exception ex) { W("Proc ERR " + ex.Message); }
+        W("DONE");
+        return 0;
     }
 
     static void Snap(Window w, string file)

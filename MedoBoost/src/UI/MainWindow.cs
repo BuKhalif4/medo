@@ -116,7 +116,7 @@ public class MainWindow : Window
             nav.Children.Add(rb);
         }
         Nav("home", "", "الرئيسية");
-        Nav("fresh", "\uE71D", "تنظيف من الصفر");
+        Nav("fresh", "\uE895", "تنظيف من الصفر");
         Nav("clean", "", "التنظيف العميق");
         Nav("apps", "", "البرامج والرامات");
         Nav("tweaks", "", "تسريع وتويكات");
