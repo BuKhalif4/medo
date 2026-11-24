@@ -10,6 +10,8 @@ internal static class Util
     public static string RoamingAppData => Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
     public static string ProgramData => Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
     public static string WinDir => Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+    public static string ProgramFiles => Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+    public static string ProgramFilesX86 => Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
     public static string UserProfile => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     public static string LocalLow => Path.Combine(UserProfile, "AppData", "LocalLow");
     public static string SystemDrive => Path.GetPathRoot(WinDir) ?? "C:\\";

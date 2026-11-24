@@ -56,6 +56,8 @@ public class MainWindow : Window
         factories["clean"] = () => new CleanerPage();
         factories["apps"] = () => new ProcessesPage();
         factories["tweaks"] = () => new TweaksPage();
+        factories["security"] = () => new SecurityPage();
+        factories["uninstall"] = () => new UninstallPage();
         factories["startup"] = () => new StartupPage();
         factories["fps"] = () => new FpsPage();
         factories["tools"] = () => new ToolsPage();
@@ -129,6 +131,8 @@ public class MainWindow : Window
         Nav("tweaks", "", "تسريع وتويكات");
         Nav("startup", "", "بدء التشغيل");
         Nav("fps", "", "FPS والأوفرلاي");
+        Nav("security", "", "الحماية والتحديثات");
+        Nav("uninstall", "", "إلغاء التثبيت");
         Nav("tools", "", "أدوات الإصلاح");
         Nav("log", "", "السجل وحول");
 

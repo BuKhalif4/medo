@@ -73,7 +73,7 @@ public static class Program
             foreach (var id in win.PageIds.ToList())
             {
                 win.Navigate(id);
-                await Task.Delay(id == "clean" ? 6000 : id == "fresh" ? 12000 : 2200);
+                await Task.Delay(id == "clean" ? 6000 : id == "fresh" ? 12000 : id is "uninstall" or "security" ? 6000 : 2200);
                 Snap(win, Path.Combine(outDir, $"{id}.png"));
                 Console.WriteLine("page ok: " + id);
             }
@@ -139,7 +139,14 @@ public static class Program
                 catch (Exception ex) { W($"{i.Id} ERR {ex.Message}"); }
             }
         W("");
-        W("=== MEMORY / STARTUP / PROCESSES ===");
+        W("=== SECURITY / UPDATES / UNINSTALL (read-only) ===");
+        try { var d = Security.Status(); W($"Defender available={d.Available} realtime={d.RealtimeOn} tamper={d.TamperOn} sig={d.Signature}"); } catch (Exception ex) { W("Defender ERR " + ex.Message); }
+        try { W("GPU driver source: " + SystemActions.GpuDriverSource().url); } catch (Exception ex) { W("Driver ERR " + ex.Message); }
+        try { W("Active network adapters: " + string.Join(", ", SystemActions.ActiveAdapters())); } catch (Exception ex) { W("Net ERR " + ex.Message); }
+        try { W("WARP installed: " + SystemActions.WarpInstalled); } catch (Exception ex) { W("WARP ERR " + ex.Message); }
+        try { var prog = Uninstaller.List(); W($"Installed programs: {prog.Count}, sample: {string.Join(", ", prog.Take(5).Select(x => x.Name))}"); } catch (Exception ex) { W("Uninstaller ERR " + ex.Message); }
+        W("");
+                W("=== MEMORY / STARTUP / PROCESSES ===");
         try { W("RAM freed: " + Util.Size(Memory.CleanAll())); } catch (Exception ex) { W("RAM ERR " + ex.Message); }
         try { W("Startup entries: " + StartupManager.List().Count); } catch (Exception ex) { W("Startup ERR " + ex.Message); }
         try { var g = ProcessManager.Instance.Snapshot(false); Thread.Sleep(1000); g = ProcessManager.Instance.Snapshot(false); W($"Process groups: {g.Count}, top: {string.Join(", ", g.OrderByDescending(x => x.Ram).Take(3).Select(x => x.Name + " " + Util.Size(x.Ram)))}"); }
