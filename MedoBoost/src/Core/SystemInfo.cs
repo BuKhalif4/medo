@@ -38,6 +38,9 @@ public static class SystemInfo
     static string Clean(string s) => System.Text.RegularExpressions.Regex.Replace(
         s.Replace("(R)", "").Replace("(TM)", "").Replace("(tm)", "").Replace(" CPU", "").Replace("  ", " "), @"\s*@.*$", "").Trim();
 
+    /// <summary>Keeps "133 GB" / "2.6 GHz" in left-to-right order inside Arabic text.</summary>
+    static string N(string s) => "\u202A" + s + "\u202C";
+
     static string GB(long bytes) => bytes >= 1_000_000_000_000 ? $"{bytes / 1e12:0.##} TB" : $"{bytes / 1e9:0} GB";
 
     public static SystemSpecs Read()
@@ -49,7 +52,7 @@ public static class SystemInfo
         if (cpu != null)
         {
             r.Cpu = Clean(S(cpu, "Name"));
-            r.CpuSub = $"{L(cpu, "NumberOfCores")} أنوية • {L(cpu, "NumberOfLogicalProcessors")} مسار • {L(cpu, "MaxClockSpeed") / 1000.0:0.0#} GHz";
+            r.CpuSub = $"{L(cpu, "NumberOfCores")} أنوية • {L(cpu, "NumberOfLogicalProcessors")} مسار • {N($"{L(cpu, "MaxClockSpeed") / 1000.0:0.0#} GHz")}";
         }
 
         // ---- RAM
@@ -64,7 +67,7 @@ public static class SystemInfo
             r.Ram = $"{total / 1073741824.0:0.#} GB";
             r.RamSub = string.Join(" • ", new[]
             {
-                type, speed > 0 ? $"{speed} MT/s" : "",
+                type, speed > 0 ? N($"{speed} MT/s") : "",
                 slots > 0 ? $"{sticks.Count} من {slots} منافذ" : $"{sticks.Count} شريحة",
             }.Where(x => x.Length > 0));
         }
@@ -83,10 +86,10 @@ public static class SystemInfo
                 var digits = string.Concat(drv.Split('.').Skip(2)).Replace(".", "");
                 if (digits.Length >= 5) { var d5 = digits[^5..]; drv = $"{d5[..3]}.{d5[3..]}"; }
             }
-            r.GpuSub = string.Join(" • ", new[] { vram > 0 ? $"{vram / 1073741824.0:0.#} GB VRAM" : "", drv.Length > 0 ? "تعريف " + drv : "" }.Where(x => x.Length > 0));
+            r.GpuSub = string.Join(" • ", new[] { vram > 0 ? N($"{vram / 1073741824.0:0.#} GB VRAM") : "", drv.Length > 0 ? "تعريف " + N(drv) : "" }.Where(x => x.Length > 0));
             // ---- display
             long w = L(gpu, "CurrentHorizontalResolution"), h = L(gpu, "CurrentVerticalResolution"), hz = L(gpu, "CurrentRefreshRate");
-            if (w > 0) { r.Display = $"{w}×{h}"; r.DisplaySub = hz > 0 ? $"{hz} Hz" : ""; }
+            if (w > 0) { r.Display = $"{w}×{h}"; r.DisplaySub = hz > 0 ? N($"{hz} Hz") : ""; }
         }
         var mon = Query("SELECT UserFriendlyName FROM WmiMonitorID", @"root\wmi").FirstOrDefault();
         if (mon != null)
@@ -96,7 +99,7 @@ public static class SystemInfo
                 if (mon["UserFriendlyName"] is ushort[] chars)
                 {
                     var name = new string(chars.TakeWhile(c => c != 0).Select(c => (char)c).ToArray()).Trim();
-                    if (name.Length > 0) r.DisplaySub = string.Join(" • ", new[] { r.DisplaySub, name }.Where(x => x.Length > 0));
+                    if (name.Length > 0) r.DisplaySub = string.Join(" • ", new[] { r.DisplaySub, N(name) }.Where(x => x.Length > 0));
                 }
             }
             catch { }
@@ -108,7 +111,7 @@ public static class SystemInfo
         {
             try { if (d.DriveType == DriveType.Fixed && d.IsReady) { tot += d.TotalSize; used += d.TotalSize - d.TotalFreeSpace; } } catch { }
         }
-        if (tot > 0) { r.Storage = GB(tot); r.StorageSub = $"{GB(used)} مستخدم من {GB(tot)}"; }
+        if (tot > 0) { r.Storage = GB(tot); r.StorageSub = $"{N(GB(used))} مستخدم من {N(GB(tot))}"; }
         var disks = Query("SELECT FriendlyName, MediaType, BusType, Size FROM MSFT_PhysicalDisk", @"root\Microsoft\Windows\Storage")
             .Select(d =>
             {
