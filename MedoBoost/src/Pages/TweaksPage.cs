@@ -38,7 +38,7 @@ public class TweaksPage : PageBase
         Children.Add(head);
 
         var list = new StackPanel();
-        string[] glyphs = { "", "", "", "", "" };
+        string[] glyphs = { "", "", "", "", "", "\uE943" };
         for (int ci = 0; ci < Tweaks.Categories.Length; ci++)
         {
             var cat = Tweaks.Categories[ci];

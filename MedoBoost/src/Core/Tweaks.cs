@@ -127,7 +127,7 @@ public static class Reg
 
 public static class Tweaks
 {
-    public static readonly string[] Categories = { "الألعاب", "الأداء والنظام", "الشبكة والبنق", "الخصوصية وبرامج الخلفية", "الخدمات" };
+    public static readonly string[] Categories = { "الألعاب", "الأداء والنظام", "الشبكة والبنق", "الخصوصية وبرامج الخلفية", "الخدمات", "البرمجة" };
     public static List<Tweak> All { get; } = Build();
 
     const string MM = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile";
@@ -270,7 +270,11 @@ public static class Tweaks
                         CU(@"Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager", "SubscribedContent-353696Enabled", 0, 1),
                         CU(@"Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager", "SystemPaneSuggestionsEnabled", 0, 1),
                         CU(@"Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager", "SilentInstalledAppsEnabled", 0, 1),
-                        CU(@"Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager", "SoftLandingEnabled", 0, 1) }),
+                        CU(@"Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager", "SoftLandingEnabled", 0, 1),
+                        CU(@"Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager", "SubscribedContent-310093Enabled", 0, 1),
+                        CU(@"Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager", "SubscribedContent-338393Enabled", 0, 1),
+                        CU(@"Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager", "SubscribedContent-353698Enabled", 0, 1),
+                        CU(@"Software\Microsoft\Windows\CurrentVersion\UserProfileEngagement", "ScoobeSystemSettingEnabled", 0, 1) }),
             RegTweak("x_bing", 3, "إيقاف بحث الويب (Bing) في قائمة ابدأ",
                 "البحث في قائمة ابدأ يصير أسرع ويبحث بجهازك فقط.",
                 new[] { CU(@"Software\Policies\Microsoft\Windows\Explorer", "DisableSearchBoxSuggestions", 1), CU(@"Software\Microsoft\Windows\CurrentVersion\Search", "BingSearchEnabled", 0) }),
@@ -278,7 +282,7 @@ public static class Tweaks
                 "يوقف لوحة الأخبار والطقس اللي تشتغل بالخلفية وتاكل رام.",
                 new[] { LM(@"SOFTWARE\Policies\Microsoft\Dsh", "AllowNewsAndInterests", 0) }),
             RegTweak("x_copilot", 3, "إيقاف Copilot", "يوقف Windows Copilot.",
-                new[] { CU(@"Software\Policies\Microsoft\Windows\WindowsCopilot", "TurnOffWindowsCopilot", 1), LM(@"SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot", "TurnOffWindowsCopilot", 1) }, rec: false),
+                new[] { CU(@"Software\Policies\Microsoft\Windows\WindowsCopilot", "TurnOffWindowsCopilot", 1), LM(@"SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot", "TurnOffWindowsCopilot", 1) }),
             RegTweak("x_recall", 3, "إيقاف Recall (لقطات الشاشة بالذكاء الاصطناعي)", "يمنع Windows من حفظ لقطات لشاشتك (على أجهزة Copilot+).",
                 new[] { CU(@"Software\Policies\Microsoft\Windows\WindowsAI", "DisableAIDataAnalysis", 1), LM(@"SOFTWARE\Policies\Microsoft\Windows\WindowsAI", "DisableAIDataAnalysis", 1) }),
             RegTweak("x_activity", 3, "إيقاف سجل النشاطات (Activity History)", "يمنع Windows من تسجيل البرامج والملفات التي تستخدمها.",
@@ -286,6 +290,60 @@ public static class Tweaks
                         LM(@"SOFTWARE\Policies\Microsoft\Windows\System", "UploadUserActivities", 0) }),
             RegTweak("x_wer", 3, "إيقاف تقارير الأخطاء (Error Reporting)", "يمنع إنشاء وإرسال تقارير الأعطال (توفير مساحة ومعالج).",
                 new[] { LM(@"SOFTWARE\Microsoft\Windows\Windows Error Reporting", "Disabled", 1, 0) }, rec: false),
+
+            RegTweak("x_cortana", 3, "إيقاف Cortana", "يمنع Cortana من العمل بالخلفية.",
+                new[] { LM(@"SOFTWARE\Policies\Microsoft\Windows\Windows Search", "AllowCortana", 0) }),
+            RegTweak("x_edge", 3, "تنظيف Edge من الإضافات المزعجة",
+                "يوقف الشريط الجانبي وCopilot داخل Edge ومساعد التسوق والاقتراحات وشاشة الترحيب. (Edge نفسه يبقى لأن برامج كثيرة تعتمد على WebView2).",
+                new[] { LM(@"SOFTWARE\Policies\Microsoft\Edge", "HubsSidebarEnabled", 0), LM(@"SOFTWARE\Policies\Microsoft\Edge", "EdgeShoppingAssistantEnabled", 0),
+                        LM(@"SOFTWARE\Policies\Microsoft\Edge", "ShowRecommendationsEnabled", 0), LM(@"SOFTWARE\Policies\Microsoft\Edge", "HideFirstRunExperience", 1),
+                        LM(@"SOFTWARE\Policies\Microsoft\Edge", "PersonalizationReportingEnabled", 0), LM(@"SOFTWARE\Policies\Microsoft\Edge", "DiagnosticData", 0) }),
+            RegTweak("n_dop2p", 2, "منع رفع التحديثات لأجهزة ثانية (P2P)",
+                "Windows يستخدم نتك ليرسل تحديثات لأجهزة غيرك – هذا يوقفه (يوفر سرعة رفع ويقلل البنق).",
+                new[] { LM(@"SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization", "DODownloadMode", 0) }),
+            RegTweak("g_gamebar_popup", 0, "إيقاف نوافذ Game Bar المنبثقة",
+                "يمنع رسالة «ms-gamingoverlay» ونافذة Game Bar لما تضغط زر Xbox أو بعد حذف تطبيقات Xbox.",
+                new[] { CU(@"Software\Microsoft\GameBar", "UseNexusForGameBarEnabled", 0), CU(@"Software\Microsoft\GameBar", "ShowStartupPanel", 0),
+                        CU(@"Software\Microsoft\Windows\CurrentVersion\GameDVR", "AudioCaptureEnabled", 0) }),
+            RegTweak("g_wudrivers", 0, "منع Windows Update من تغيير تعريف كرت الشاشة",
+                "Windows أحياناً يركّب تعريف قديم فوق تعريفك. فعّل هذا إذا تحدّث تعريف NVIDIA/AMD بنفسك.",
+                new[] { LM(@"SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate", "ExcludeWUDriversInQualityUpdate", 1) }, rec: false),
+            RegTweak("g_hvci", 0, "إيقاف Memory Integrity (عزل النواة)",
+                "مايكروسوفت نفسها تقول إنه ممكن يقلل أداء الألعاب. إيقافه يرفع FPS على أجهزة كثيرة، لكنه يقلل الحماية. WSL و Docker والمحاكيات تضل تشتغل عادي. يحتاج ريستارت.",
+                new[] { LM(@"SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity", "Enabled", 0) }, rec: false, risk: Risk.Caution, restart: true),
+            RegTweak("p_endtask", 1, "زر «إنهاء المهمة» في شريط المهام",
+                "كليك يمين على أي برنامج بشريط المهام ← End task. (Windows 11)",
+                new[] { CU(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\TaskbarDeveloperSettings", "TaskbarEndTask", 1) }),
+            new Tweak
+            {
+                Id = "p_classicmenu", Category = Categories[1], Name = "قائمة الكليك يمين الكلاسيكية (Windows 11)", Recommended = false, NeedsRestart = true,
+                Description = "يرجع قائمة الكليك يمين الكاملة بدل «Show more options». تشتغل بعد إعادة تشغيل Explorer.",
+                IsApplied = () => { try { using var k = Reg.Base("HKCU").OpenSubKey(ClassicMenuKey); return k != null; } catch { return false; } },
+                Apply = () => { using var k = Reg.Base("HKCU").CreateSubKey(ClassicMenuKey, true); k.SetValue("", "", Microsoft.Win32.RegistryValueKind.String); Log.Info("Classic context menu on"); },
+                Revert = () => { try { Reg.Base("HKCU").DeleteSubKeyTree(@"Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}", false); } catch { } Log.Info("Classic context menu off"); },
+            },
+
+            // ================= Programming =================
+            RegTweak("d_longpaths", 5, "تفعيل المسارات الطويلة (Long Paths)",
+                "يحل أخطاء node_modules و git و Python لما المسار يتعدى 260 حرف.",
+                new[] { LM(@"SYSTEM\CurrentControlSet\Control\FileSystem", "LongPathsEnabled", 1, 0) }),
+            RegTweak("d_ext", 5, "إظهار امتدادات الملفات (.js .py .exe)",
+                "ضروري للمبرمج – ويحميك من ملفات مثل photo.jpg.exe.",
+                new[] { CU(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "HideFileExt", 0, 1) }),
+            RegTweak("d_hidden", 5, "إظهار الملفات المخفية (.git .env)",
+                "يظهر الملفات والمجلدات المخفية في Explorer.",
+                new[] { CU(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "Hidden", 1, 2) }, rec: false),
+            RegTweak("d_devmode", 5, "وضع المطور (Developer Mode)",
+                "يسمح بإنشاء Symlinks بدون صلاحية مسؤول (npm/pnpm و git يحتاجوها) وتشغيل تطبيقات التطوير.",
+                new[] { LM(@"SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock", "AllowDevelopmentWithoutDevLicense", 1, 0) }),
+            new Tweak
+            {
+                Id = "d_wslmem", Category = Categories[5], Name = "تحديد رام WSL و Docker",
+                Description = "WSL و Docker (عملية vmmem) ممكن ياكلوا رامات كثير وما يرجعوها. هذا يحدّد حدهم لنص الرام ويخليهم يرجّعوا الرام الفاضية تلقائياً. يشتغل بعد wsl --shutdown.",
+                IsApplied = () => { try { var f = WslConfigPath; return File.Exists(f) && File.ReadAllText(f).Contains("MEDO Boost"); } catch { return false; } },
+                Apply = ApplyWslConfig,
+                Revert = RevertWslConfig,
+            },
 
             // ================= Services =================
             ServiceTweak("s_diag", "خدمة التتبع (DiagTrack)", "تجمع بيانات الاستخدام وترسلها. إيقافها آمن.", new[] { "DiagTrack", "dmwappushservice" }, true),
@@ -300,6 +358,44 @@ public static class Tweaks
             ServiceTweak("s_wer", "خدمة تقارير الأخطاء (WerSvc)", "ترسل تقارير الأعطال لمايكروسوفت.", new[] { "WerSvc" }, false),
         };
         return l;
+    }
+
+    const string ClassicMenuKey = @"Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32";
+
+    // ---------------- WSL ----------------
+    static string WslConfigPath => System.IO.Path.Combine(Util.UserProfile, ".wslconfig");
+    static string WslBackupPath => System.IO.Path.Combine(Util.DataDir, "wslconfig.backup");
+
+    static void ApplyWslConfig()
+    {
+        var f = WslConfigPath;
+        var m = new Native.MEMORYSTATUSEX();
+        Native.GlobalMemoryStatusEx(m);
+        int gb = Math.Max(2, (int)(m.ullTotalPhys / 1073741824UL / 2));
+        var lines = File.Exists(f) ? File.ReadAllLines(f).ToList() : new List<string>();
+        if (File.Exists(f) && !File.Exists(WslBackupPath)) File.Copy(f, WslBackupPath);
+        lines.RemoveAll(l => l.TrimStart().StartsWith("memory", StringComparison.OrdinalIgnoreCase) || l.TrimStart().StartsWith("autoMemoryReclaim", StringComparison.OrdinalIgnoreCase) || l.Contains("MEDO Boost"));
+        int idx = lines.FindIndex(l => l.Trim().Equals("[wsl2]", StringComparison.OrdinalIgnoreCase));
+        if (idx < 0) { lines.Insert(0, "[wsl2]"); idx = 0; }
+        lines.Insert(idx + 1, "# MEDO Boost: limit RAM for gaming");
+        lines.Insert(idx + 2, $"memory={gb}GB");
+        int exp = lines.FindIndex(l => l.Trim().Equals("[experimental]", StringComparison.OrdinalIgnoreCase));
+        if (exp < 0) { lines.Add(""); lines.Add("[experimental]"); exp = lines.Count - 1; }
+        lines.Insert(exp + 1, "autoMemoryReclaim=gradual");
+        File.WriteAllLines(f, lines);
+        Log.Ok($".wslconfig → memory={gb}GB, autoMemoryReclaim=gradual");
+    }
+
+    static void RevertWslConfig()
+    {
+        var f = WslConfigPath;
+        if (File.Exists(WslBackupPath)) { File.Copy(WslBackupPath, f, true); File.Delete(WslBackupPath); }
+        else if (File.Exists(f))
+        {
+            var lines = File.ReadAllLines(f).Where(l => !l.Contains("MEDO Boost") && !l.TrimStart().StartsWith("autoMemoryReclaim") && !l.TrimStart().StartsWith("memory=")).ToList();
+            if (lines.All(l => string.IsNullOrWhiteSpace(l) || l.Trim().StartsWith("["))) File.Delete(f); else File.WriteAllLines(f, lines);
+        }
+        Log.Info(".wslconfig restored");
     }
 
     // ---------------- Services ----------------

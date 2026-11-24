@@ -54,9 +54,9 @@ public class DashboardPage : PageBase
             Ui.Cols(new[] { "*", "Auto" }, Ui.Txt("الشبكة", 14, "Text", FontWeights.SemiBold), Ui.HStack(12, Legend("#FF06B6D4", "تحميل"), Legend("#FFEC4899", "رفع"))),
             netChart.M(0, 14, 0, 0), netText.M(0, 8, 0, 0)));
 
-        var scoreBtn = Ui.Btn("تحسين الآن", "", async () => await OneClick());
+        var scoreBtn = Ui.Btn("تحسين الآن", "", () => MainWindow.Instance.Navigate("fresh"));
         scoreBtn.HorizontalAlignment = HorizontalAlignment.Stretch;
-        scoreBtn.ToolTip = "نقطة استعادة + التويكات المنصوح بها + تنظيف + تحرير رام";
+        scoreBtn.ToolTip = "يفتح بروفايل الألعاب + البرمجة";
         var scoreCard = Ui.Card(Ui.VStack(
             Ui.Txt("صحة الجهاز", 14, "Text", FontWeights.SemiBold),
             Ui.HStack(6, scoreText, Ui.Txt("/100", 16, "TextMute")).Ltr().M(0, 6, 0, 0),

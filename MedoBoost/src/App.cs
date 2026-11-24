@@ -71,7 +71,7 @@ public static class Program
             foreach (var id in win.PageIds.ToList())
             {
                 win.Navigate(id);
-                await Task.Delay(id == "clean" ? 6000 : 2200);
+                await Task.Delay(id == "clean" ? 6000 : id == "fresh" ? 12000 : 2200);
                 Snap(win, Path.Combine(outDir, $"{id}.png"));
                 Console.WriteLine("page ok: " + id);
             }

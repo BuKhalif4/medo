@@ -51,6 +51,7 @@ public class MainWindow : Window
         });
 
         factories["home"] = () => new DashboardPage();
+        factories["fresh"] = () => new FreshPage();
         factories["clean"] = () => new CleanerPage();
         factories["apps"] = () => new ProcessesPage();
         factories["tweaks"] = () => new TweaksPage();
@@ -115,6 +116,7 @@ public class MainWindow : Window
             nav.Children.Add(rb);
         }
         Nav("home", "", "الرئيسية");
+        Nav("fresh", "\uE71D", "تنظيف من الصفر");
         Nav("clean", "", "التنظيف العميق");
         Nav("apps", "", "البرامج والرامات");
         Nav("tweaks", "", "تسريع وتويكات");
