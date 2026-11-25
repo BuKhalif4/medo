@@ -6,6 +6,9 @@ local bagProp, prevMask = nil, nil
 local menuOpen, working = false, false
 local drops, dropObjs = {}, {}
 local lastPrompt, lastDeath = '', 0
+local overrides = {}                 -- نقاط حددها المطوّر (من السيرفر)
+local blips = {}
+local nearInfo = { bench = false, armory = false }
 
 local function nui(t) SendNUIMessage(t) end
 
@@ -16,6 +19,21 @@ local function loadModel(name)
   while not HasModelLoaded(hash) and t < 100 do Wait(50); t = t + 1 end
   return hash
 end
+
+-- نقطة المكان: ما حدده المطوّر، وإلا الإعدادات (نفس منطق السيرفر)
+local function pt(spot, kind)
+  local o = overrides[spot.id] and overrides[spot.id][kind]
+  if o then return vec3(o[1], o[2], o[3]) end
+  local c
+  if kind == 'main' then c = spot.coords
+  elseif kind == 'inside' then c = spot.inside or spot.coords
+  elseif kind == 'bench' then
+    if spot.bench then c = spot.bench elseif spot.type == 'gang' then return pt(spot, 'inside') end
+  end
+  return c and vec3(c[1], c[2], c[3]) or nil
+end
+
+local function findSpot(list, id) for _, e in ipairs(list) do if e.id == id then return e end end end
 
 -- ===== القناع =====
 local function applyMask(on)
@@ -97,6 +115,21 @@ RegisterNetEvent('bagcity:client:tp', function(x, y, z)
   if IsPedInAnyVehicle(ped, false) then SetPedCoordsKeepVehicle(ped, x, y, z) else SetEntityCoords(ped, x, y, z, false, false, false, false) end
 end)
 
+-- ===== الأسلحة (السيرفر يقرر، والعميل ينفّذ) =====
+RegisterNetEvent('bagcity:client:gear', function(g)
+  local ped = PlayerPedId()
+  if g.armor then SetPedArmour(ped, g.armor) end
+  if g.weapon then
+    local hash = joaat(g.weapon)
+    if not HasPedGotWeapon(ped, hash, false) then
+      GiveWeaponToPed(ped, hash, g.ammo or 0, false, false)
+    elseif (g.ammo or 0) > 0 then
+      AddAmmoToPed(ped, hash, g.ammo)
+    end
+    for _, comp in ipairs(g.comps or {}) do GiveWeaponComponentToPed(ped, hash, joaat(comp)) end
+  end
+end)
+
 -- ===== الحقائب المرمية =====
 RegisterNetEvent('bagcity:client:drops', function(list)
   local seen = {}
@@ -135,7 +168,7 @@ end)
 
 -- ===== علامات الخريطة (أسماء إنجليزية لأن خط GTA ما يعرض العربي) =====
 local function addBlip(c, sprite, color, name, scale)
-  local b = AddBlipForCoord(c[1], c[2], c[3])
+  local b = AddBlipForCoord(c.x, c.y, c.z)
   SetBlipSprite(b, sprite)
   SetBlipColour(b, color)
   SetBlipScale(b, scale or 0.8)
@@ -143,49 +176,98 @@ local function addBlip(c, sprite, color, name, scale)
   BeginTextCommandSetBlipName('STRING')
   AddTextComponentSubstringPlayerName(name)
   EndTextCommandSetBlipName(b)
-  return b
+  blips[#blips + 1] = b
 end
 
-CreateThread(function()
-  local z = Config.Zone
-  local border = AddBlipForRadius(z.center[1], z.center[2], z.center[3], z.radius)
-  SetBlipColour(border, 1)
-  SetBlipAlpha(border, 70)
-  for _, h in ipairs(Config.Heists) do addBlip(h.coords, 52, 5, h.tag, 0.7) end
-  for _, l in ipairs(Config.Launderers) do addBlip(l.coords, 108, 2, 'Launderer', 0.8) end
+local zoneBlip
+local function buildBlips()
+  for _, b in ipairs(blips) do RemoveBlip(b) end
+  blips = {}
+  if not zoneBlip then
+    local z = Config.Zone
+    zoneBlip = AddBlipForRadius(z.center[1], z.center[2], z.center[3], z.radius)
+    SetBlipColour(zoneBlip, 1)
+    SetBlipAlpha(zoneBlip, 70)
+  end
+  for _, h in ipairs(Config.Heists) do addBlip(pt(h, 'main'), 52, 5, h.tag, 0.7) end
+  for _, l in ipairs(Config.Launderers) do addBlip(pt(l, 'main'), 108, 2, 'Launderer', 0.8) end
   for _, p in ipairs(Config.Places) do
     local sprite, color = 40, 2
     if p.type == 'police' then sprite, color = 60, 3 elseif p.type == 'gang' then sprite, color = 84, 1 end
-    addBlip(p.coords, sprite, color, p.tag, 0.9)
+    addBlip(pt(p, 'main'), sprite, color, p.tag, 0.9)
   end
-end)
-
--- ===== شريط التقدم (سرقة / تبييض / مداهمة) =====
-local function progress(label, seconds, center, radius, onDone, onCancel)
-  working = true
-  TaskStartScenarioInPlace(PlayerPedId(), 'PROP_HUMAN_BUM_BIN', 0, true)
-  nui({ type = 'progress', label = label, seconds = seconds })
-  CreateThread(function()
-    local left = seconds
-    while left > 0 do
-      local ped = PlayerPedId()
-      if #(GetEntityCoords(ped) - center) > radius + 1.5 or IsPedDeadOrDying(ped, true) then
-        ClearPedTasks(ped); working = false; nui({ type = 'progress', hide = true }); onCancel(); return
-      end
-      Wait(1000)
-      left = left - 1
-    end
-    ClearPedTasks(PlayerPedId()); working = false; nui({ type = 'progress', hide = true }); onDone()
-  end)
 end
 
-local function findSpot(list, id) for _, e in ipairs(list) do if e.id == id then return e end end end
-local function vec(c) return vec3(c[1], c[2], c[3]) end
+RegisterNetEvent('bagcity:client:points', function(o)
+  overrides = o or {}
+  buildBlips()
+end)
+CreateThread(buildBlips)
+
+-- ===== الأنيميشن =====
+local function playAnim(dict, name, flag)
+  RequestAnimDict(dict)
+  local t = 0
+  while not HasAnimDictLoaded(dict) and t < 40 do Wait(50); t = t + 1 end
+  if HasAnimDictLoaded(dict) then
+    TaskPlayAnim(PlayerPedId(), dict, name, 3.0, -3.0, -1, flag or 1, 0.0, false, false, false)
+    return true
+  end
+  return false
+end
+local function scenario(name) TaskStartScenarioInPlace(PlayerPedId(), name, 0, true) end
+
+-- مراحل الاقتحام: طرق الباب، كسره، ثم تفتيش المكان
+local function stepKnock()
+  if not playAnim('timetable@jimmy@doorknock@', 'knockdoor_idle', 1) then scenario('WORLD_HUMAN_STAND_IMPATIENT') end
+end
+local function stepRam()
+  scenario('WORLD_HUMAN_HAMMERING')
+  PlaySoundFrontend(-1, 'Drill_Pin_Break', 'DLC_HEIST_FLEECA_SOUNDSET', true)
+  ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', 0.05)
+end
+local function stepSearch()
+  StopGameplayCamShaking(true)
+  if not playAnim('anim@gangops@facility@servers@bodysearch@', 'player_search', 1) then scenario('PROP_HUMAN_BUM_BIN') end
+end
+
+-- ===== شريط التقدم (سرقة / تبييض / مداهمة) =====
+-- phases (اختياري): { {frac=0.3, label='..', run=function() end}, ... }
+local function progress(label, seconds, center, radius, onDone, onCancel, phases)
+  working = true
+  local function cancel(reason)
+    local ped = PlayerPedId()
+    ClearPedTasks(ped); StopGameplayCamShaking(true)
+    working = false; nui({ type = 'progress', hide = true }); onCancel()
+  end
+  if phases then phases[1].run() else scenario('PROP_HUMAN_BUM_BIN') end
+  nui({ type = 'progress', label = phases and phases[1].label or label, seconds = seconds })
+  CreateThread(function()
+    local left, phase, nextAt = seconds, 1, phases and math.floor(seconds * phases[1].frac) or nil
+    local elapsed = 0
+    while left > 0 do
+      local ped = PlayerPedId()
+      if #(GetEntityCoords(ped) - center) > radius + 1.5 or IsPedDeadOrDying(ped, true) then return cancel() end
+      if phases and phase < #phases and elapsed >= nextAt then
+        phase = phase + 1
+        ClearPedTasks(ped)
+        phases[phase].run()
+        nui({ type = 'progresslabel', label = phases[phase].label })
+        nextAt = nextAt + math.floor(seconds * phases[phase].frac)
+      end
+      Wait(1000)
+      left, elapsed = left - 1, elapsed + 1
+      if phases and phase == 2 then ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', 0.05) end
+    end
+    ClearPedTasks(PlayerPedId()); StopGameplayCamShaking(true)
+    working = false; nui({ type = 'progress', hide = true }); onDone()
+  end)
+end
 
 RegisterNetEvent('bagcity:client:robStart', function(id, duration)
   local h = findSpot(Config.Heists, id)
   if h then
-    progress('جاري السطو على ' .. h.label, duration, vec(h.coords), h.radius,
+    progress('جاري السطو على ' .. h.label, duration, pt(h, 'main'), h.radius,
       function() TriggerServerEvent('bagcity:server:finishRob') end,
       function() TriggerServerEvent('bagcity:server:cancelRob') end)
   end
@@ -194,7 +276,7 @@ end)
 RegisterNetEvent('bagcity:client:launderStart', function(id, duration)
   local l = findSpot(Config.Launderers, id)
   if l then
-    progress('جاري تبييض الحقيبة', duration, vec(l.coords), l.radius,
+    progress('جاري تبييض الحقيبة', duration, pt(l, 'main'), l.radius,
       function() TriggerServerEvent('bagcity:server:finishLaunder') end,
       function() TriggerServerEvent('bagcity:server:cancelLaunder') end)
   end
@@ -203,9 +285,14 @@ end)
 RegisterNetEvent('bagcity:client:raidStart', function(id, duration)
   local pl = findSpot(Config.Places, id)
   if pl then
-    progress('جاري اقتحام ' .. pl.label, duration, vec(pl.coords), pl.radius,
+    progress('جاري اقتحام ' .. pl.label, duration, pt(pl, 'main'), pl.radius,
       function() TriggerServerEvent('bagcity:server:finishRaid') end,
-      function() TriggerServerEvent('bagcity:server:cancelRaid') end)
+      function() TriggerServerEvent('bagcity:server:cancelRaid') end,
+      {
+        { frac = 0.3, label = 'تطرق الباب وتنادي: شرطة!', run = stepKnock },
+        { frac = 0.3, label = 'تكسر الباب...', run = stepRam },
+        { frac = 0.4, label = 'تفتّش المكان...', run = stepSearch },
+      })
   end
 end)
 
@@ -228,18 +315,43 @@ local function placesForMenu()
   local list = {}
   for _, p in ipairs(Config.Places) do
     list[#list + 1] = { id = p.id, label = p.label, icon = p.type == 'police' and '🛡️' or (p.type == 'gang' and '🏴' or '🏠'),
-      kind = p.type == 'police' and 'الشرطة' or (p.type == 'gang' and 'مقر عصابة' or 'بيت آمن') }
+      kind = p.type == 'police' and 'الشرطة' or (p.type == 'gang' and 'مقر عصابة' or 'بيت آمن'), place = true, gang = p.type == 'gang' }
   end
   for _, h in ipairs(Config.Heists) do list[#list + 1] = { id = h.id, label = h.label, icon = '🛒', kind = 'سطو' } end
   for _, l in ipairs(Config.Launderers) do list[#list + 1] = { id = l.id, label = l.label, icon = '💱', kind = 'تبييض' } end
   return list
 end
 
+local function gearForMenu()
+  local list = {}
+  for _, w in ipairs(Config.Weapons) do
+    local m = {}
+    for _, x in ipairs(w.mods) do m[#m + 1] = { id = x.id, label = x.label, price = x.price } end
+    list[#list + 1] = { id = w.id, label = w.label, price = w.price, ammo = w.ammo, refill = math.floor(w.price * Config.RefillRate), mods = m }
+  end
+  return { weapons = list, armor = Config.ArmorPrice }
+end
+
+local function computeNear()
+  local pos = GetEntityCoords(PlayerPedId())
+  local bench, armory = false, false
+  for _, p in ipairs(Config.Places) do
+    if p.type == 'gang' then
+      local b = pt(p, 'bench')
+      if b and #(pos - b) <= 4.0 then bench = true end
+    elseif p.type == 'police' and #(pos - pt(p, 'main')) <= p.radius + 3.0 then
+      armory = true
+    end
+  end
+  return { bench = bench, armory = armory }
+end
+
 local function openMenu(tab)
   if menuOpen or working then return end
   menuOpen = true
   SetNuiFocus(true, true)
-  nui({ type = 'open', tab = tab or 'citizen', nearby = nearbyPlayers(), places = placesForMenu(),
+  nearInfo = computeNear()
+  nui({ type = 'open', tab = tab or 'citizen', nearby = nearbyPlayers(), places = placesForMenu(), gear = gearForMenu(), near = nearInfo,
     bribe = { min = Config.BribeMin, max = Config.BribeMax }, state = S })
   TriggerServerEvent('bagcity:server:state')
   CreateThread(function()
@@ -267,7 +379,8 @@ end)
 RegisterNUICallback('waypoint', function(data, cb)
   local p = data and (findSpot(Config.Places, data.id) or findSpot(Config.Heists, data.id) or findSpot(Config.Launderers, data.id))
   if p then
-    SetNewWaypoint(p.coords[1] + 0.0, p.coords[2] + 0.0)
+    local c = pt(p, 'main')
+    SetNewWaypoint(c.x + 0.0, c.y + 0.0)
     nui({ type = 'toast', text = 'تم وضع العلامة على الخريطة', kind = 'good' })
   end
   cb('ok')
@@ -293,7 +406,7 @@ CreateThread(function()
 
   while true do
     local wait = 700
-    local lines, onE, onG = {}, nil, nil
+    local lines, onE, onG, onH = {}, nil, nil, nil
 
     if not working and not menuOpen then
       local ped = PlayerPedId()
@@ -305,14 +418,15 @@ CreateThread(function()
       end
 
       local function near(c, r)
-        local d = #(pos - vec(c))
+        if not c then return false end
+        local d = #(pos - c)
         if d < 30.0 then wait = math.min(wait, 250) end
         if d <= r then wait = 0; return true end
         return false
       end
 
       for _, h in ipairs(Config.Heists) do
-        if near(h.coords, h.radius) then
+        if near(pt(h, 'main'), h.radius) then
           if S.masked then
             lines[#lines + 1] = 'E — سطو: ' .. h.label
             onE = function() TriggerServerEvent('bagcity:server:startRob', h.id) end
@@ -322,31 +436,38 @@ CreateThread(function()
         end
       end
       for _, l in ipairs(Config.Launderers) do
-        if near(l.coords, l.radius) and hasBag then
+        if hasBag and near(pt(l, 'main'), l.radius) then
           lines[#lines + 1] = 'E — تبييض الحقيبة'
           onE = function() TriggerServerEvent('bagcity:server:startLaunder', l.id) end
         end
       end
       for _, p in ipairs(Config.Places) do
-        if near(p.coords, p.radius) then
+        -- الباب
+        if near(pt(p, 'main'), p.radius) then
           if p.type == 'police' then
             if S.copAllowed then
               lines[#lines + 1] = 'E — دخول / خروج الخدمة'
               onE = function() TriggerServerEvent('bagcity:server:action', 'duty', {}) end
             end
-          else
-            lines[#lines + 1] = hasBag and ('E — تخبئة الحقيبة في ' .. p.label) or ('E — استرجاع حقيبتك المخبأة من ' .. p.label)
-            onE = function() TriggerServerEvent('bagcity:server:action', 'stash', { p.id }) end
-            if S.cop then
-              lines[#lines + 1] = 'G — اقتحام المكان'
-              onG = function() TriggerServerEvent('bagcity:server:startRaid', p.id) end
-            end
+          elseif S.cop then
+            lines[#lines + 1] = 'G — اقتحام الباب (' .. p.label .. ')'
+            onG = function() TriggerServerEvent('bagcity:server:startRaid', p.id) end
           end
+        end
+        -- داخل الغرفة: التخبئة
+        if p.type ~= 'police' and near(pt(p, 'inside'), 2.5) then
+          lines[#lines + 1] = hasBag and ('E — تخبئة الحقيبة (' .. p.label .. ')') or ('E — استرجاع حقيبتك المخبأة (' .. p.label .. ')')
+          onE = function() TriggerServerEvent('bagcity:server:action', 'stash', { p.id }) end
+        end
+        -- طاولة الأدوات
+        if p.type == 'gang' and near(pt(p, 'bench'), 2.0) then
+          lines[#lines + 1] = 'H — طاولة الأدوات (أسلحة وتعديل وتعبئة)'
+          onH = function() openMenu('bench') end
         end
       end
       if not hasBag then
         for _, d in ipairs(drops) do
-          if near({ d.x, d.y, d.z }, 2.0) then
+          if near(vec3(d.x, d.y, d.z), 2.0) then
             lines[#lines + 1] = 'E — التقاط الحقيبة'
             onE = function() TriggerServerEvent('bagcity:server:pickup', d.id) end
           end
@@ -356,6 +477,7 @@ CreateThread(function()
       if wait == 0 then
         if onE and IsControlJustReleased(0, 38) then onE(); Wait(800) end
         if onG and IsControlJustReleased(0, 47) then onG(); Wait(800) end
+        if onH and IsControlJustReleased(0, 74) then onH(); Wait(800) end
       end
     end
 

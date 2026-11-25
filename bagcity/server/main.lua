@@ -22,6 +22,26 @@ for _, h in ipairs(Config.Heists) do heistById[h.id] = h end
 for _, l in ipairs(Config.Launderers) do launderById[l.id] = l end
 for _, pl in ipairs(Config.Places) do placeById[pl.id] = pl end
 
+-- ===== النقاط: الإعدادات + ما تحدده أنت من القائمة (تنحفظ) =====
+local overrides = {}     -- spotId -> { main=..., inside=..., bench=... }
+do
+  local saved = GetResourceKvpString('points')
+  if saved then overrides = json.decode(saved) or {} end
+end
+
+local function spotPoint(spot, kind)
+  local o = overrides[spot.id] and overrides[spot.id][kind]
+  if o then return { o[1], o[2], o[3] } end
+  if kind == 'main' then return spot.coords end
+  if kind == 'inside' then return spot.inside or spot.coords end
+  if kind == 'bench' then return spot.bench or (spot.type == 'gang' and spotPoint(spot, 'inside')) or nil end
+end
+
+local function spotById(id) return heistById[id] or launderById[id] or placeById[id] end
+local owned = {}          -- src -> { [weaponId] = true }  (أسلحة اشتراها من الطاولة)
+local mods = {}           -- src -> { [weaponId] = { [modId] = true } }
+local gearCooldown = {}   -- src -> { key = time }
+
 local KIND = { heist = 'سطو مسلح', drop = 'حقيبة مرمية', arrest = 'عملية قبض', bribe = 'رشوة', raid = 'مداهمة' }
 
 -- ===== أدوات عامة =====
@@ -51,7 +71,14 @@ end
 
 local function nearPlaceType(src, ptype)
   for _, pl in ipairs(Config.Places) do
-    if pl.type == ptype and Sec.near(src, pl.coords, pl.radius + 3.0) then return pl end
+    if pl.type == ptype and Sec.near(src, spotPoint(pl, 'main'), pl.radius + 3.0) then return pl end
+  end
+end
+
+local function nearBench(src)
+  for _, pl in ipairs(Config.Places) do
+    local pt = pl.type == 'gang' and spotPoint(pl, 'bench')
+    if pt and Sec.near(src, pt, 4.0) then return pl end
   end
 end
 
@@ -72,7 +99,9 @@ local function pushState(src)
     ia = IsPlayerAceAllowed(src, 'bagcity.ia'), dev = IsPlayerAceAllowed(src, 'bagcity.dev'),
     arrested = pd and { offer = pd.offer } or nil,
     bribeOffer = offerPd and { amount = offerPd.offer } or nil,
-    balance = Bridge.getBank(src),
+    balance = Bridge.getBank(src), cash = Bridge.getCash(src),
+    guns = (function() local l = {}; for id in pairs(owned[src] or {}) do l[#l + 1] = id end; return l end)(),
+    mods = mods[src] or {},
   })
 end
 
@@ -141,8 +170,9 @@ local function alertCops(h)
     local s = tonumber(idStr)
     if s and isCop(s) then
       local f = Config.AlertFuzz
+      local pt = spotPoint(h, 'main')
       TriggerClientEvent('bagcity:client:alert', s,
-        h.coords[1] + (math.random() * 2 - 1) * f, h.coords[2] + (math.random() * 2 - 1) * f, h.coords[3], h.tag)
+        pt[1] + (math.random() * 2 - 1) * f, pt[2] + (math.random() * 2 - 1) * f, pt[3], h.tag)
     end
   end
   if Config.News and h.heat >= Config.NewsMinHeat then
@@ -390,7 +420,7 @@ function Actions.stash(src, args)
   if not Sec.rate(src, 'stash', 1000) then return end
   local pl = placeById[args[1] or '']
   if not pl or (pl.type ~= 'house' and pl.type ~= 'gang') then return Sec.strike(src, 'bad stash place') end
-  if not Sec.near(src, pl.coords, pl.radius + 2.0) then return Sec.strike(src, 'stash out of range') end
+  if not Sec.near(src, spotPoint(pl, 'inside'), 4.0) then return say(src, 'ادخل الغرفة أول (التخبئة من داخل المكان).') end
   local p, id = getP(src), Bridge.id(src)
   local s = stashes[pl.id]
   if not s then s = {}; stashes[pl.id] = s end
@@ -418,7 +448,7 @@ RegisterNetEvent('bagcity:server:startRaid', function(id)
   local p = getP(src)
   if p.raid or p.rob or p.laund then return end
   if (raidCooldown[id] or 0) > os.time() then return say(src, 'المكان انداهم قبل شوي.') end
-  if not Sec.near(src, pl.coords, pl.radius + 2.0) then return Sec.strike(src, 'raid out of range') end
+  if not Sec.near(src, spotPoint(pl, 'main'), pl.radius + 2.0) then return Sec.strike(src, 'raid out of range') end
   p.raid = { id = id, t = os.time() }
   for ownerId in pairs(stashes[id] or {}) do
     local o = srcByIdentifier(ownerId)
@@ -440,7 +470,7 @@ RegisterNetEvent('bagcity:server:finishRaid', function()
   local elapsed = os.time() - p.raid.t
   p.raid = nil
   if elapsed < Config.Stash.raidTime - 1 then return Sec.strike(src, 'raid finished too early') end
-  if not Sec.near(src, pl.coords, pl.radius + 3.0) then return say(src, 'ابتعدت، انلغت المداهمة.') end
+  if not Sec.near(src, spotPoint(pl, 'main'), pl.radius + 3.0) then return say(src, 'ابتعدت، انلغت المداهمة.') end
   raidCooldown[pl.id] = os.time() + Config.Stash.raidCooldown
   local count, total = 0, 0
   for ownerId, e in pairs(stashes[pl.id] or {}) do
@@ -453,16 +483,126 @@ RegisterNetEvent('bagcity:server:finishRaid', function()
   stashes[pl.id] = {}
   local cut = math.floor(total * Config.CopCut)
   if cut > 0 then Bridge.addCash(src, cut) end
-  addIncident('raid', pl.coords, { heat = 30 })
+  addIncident('raid', spotPoint(pl, 'main'), { heat = 30 })
   say(src, count > 0 and ('داهمت المكان وصادرت %d حقيبة. حصتك %d.'):format(count, cut) or 'داهمت المكان وما لقيت شي.', count > 0 and 'good' or 'info')
 end)
+
+-- ----- الأسلحة والمعدات -----
+local weaponById = {}
+for _, w in ipairs(Config.Weapons) do weaponById[w.id] = w end
+
+local function gearWait(src, key, seconds)
+  gearCooldown[src] = gearCooldown[src] or {}
+  local left = (gearCooldown[src][key] or 0) - os.time()
+  if left > 0 then return left end
+  gearCooldown[src][key] = os.time() + seconds
+  return 0
+end
+
+local function giveGear(src, weapon, ammo, comps)
+  TriggerClientEvent('bagcity:client:gear', src, { weapon = weapon, ammo = ammo, comps = comps or {} })
+end
+
+function Actions.buyweapon(src, args)
+  if not Sec.rate(src, 'gear', 800) then return end
+  local w = weaponById[args[1] or '']
+  if not w then return Sec.strike(src, 'bad weapon id') end
+  if not nearBench(src) then return say(src, 'لازم تكون عند طاولة الأدوات في مقر عصابة.') end
+  if Bridge.getCash(src) < w.price then return say(src, ('تحتاج %d كاش.'):format(w.price)) end
+  if w.limitSeconds then
+    local left = gearWait(src, 'w_' .. w.id, w.limitSeconds)
+    if left > 0 then return say(src, ('ما تقدر تشتري %s الحين. انتظر %d دقيقة.'):format(w.label, math.ceil(left / 60))) end
+  end
+  if not Bridge.removeCash(src, w.price) then return say(src, 'فشل الدفع.', 'alert') end
+  owned[src] = owned[src] or {}
+  owned[src][w.id] = true
+  giveGear(src, w.weapon, w.ammo, {})
+  say(src, ('اشتريت %s وذخيرتها (%d).'):format(w.label, w.ammo), 'good')
+end
+
+function Actions.buymod(src, args)
+  if not Sec.rate(src, 'gear', 800) then return end
+  local w = weaponById[args[1] or '']
+  if not w or not owned[src] or not owned[src][w.id] then return say(src, 'ما تملك هالسلاح.') end
+  if not nearBench(src) then return say(src, 'لازم تكون عند طاولة الأدوات في مقر عصابة.') end
+  local mod
+  for _, m in ipairs(w.mods) do if m.id == args[2] then mod = m end end
+  if not mod then return Sec.strike(src, 'bad mod id') end
+  mods[src] = mods[src] or {}
+  mods[src][w.id] = mods[src][w.id] or {}
+  if mods[src][w.id][mod.id] then return say(src, 'مركّب أصلاً.') end
+  if Bridge.getCash(src) < mod.price then return say(src, ('تحتاج %d كاش.'):format(mod.price)) end
+  if not Bridge.removeCash(src, mod.price) then return say(src, 'فشل الدفع.', 'alert') end
+  mods[src][w.id][mod.id] = true
+  giveGear(src, w.weapon, 0, { mod.comp })
+  say(src, ('ركّبت %s على %s.'):format(mod.label, w.label), 'good')
+end
+
+function Actions.refill(src, args)
+  if not Sec.rate(src, 'gear', 800) then return end
+  local w = weaponById[args[1] or '']
+  if not w or not owned[src] or not owned[src][w.id] then return say(src, 'ما تملك هالسلاح.') end
+  if not nearBench(src) then return say(src, 'لازم تكون عند طاولة الأدوات في مقر عصابة.') end
+  local price = math.floor(w.price * Config.RefillRate)
+  if Bridge.getCash(src) < price then return say(src, ('تحتاج %d كاش.'):format(price)) end
+  if not Bridge.removeCash(src, price) then return say(src, 'فشل الدفع.', 'alert') end
+  giveGear(src, w.weapon, w.ammo, {})
+  say(src, ('عبّأت ذخيرة %s (+%d).'):format(w.label, w.ammo), 'good')
+end
+
+function Actions.buyarmor(src)
+  if not Sec.rate(src, 'gear', 800) then return end
+  if not nearBench(src) then return say(src, 'لازم تكون عند طاولة الأدوات في مقر عصابة.') end
+  if Bridge.getCash(src) < Config.ArmorPrice then return say(src, ('تحتاج %d كاش.'):format(Config.ArmorPrice)) end
+  if not Bridge.removeCash(src, Config.ArmorPrice) then return say(src, 'فشل الدفع.', 'alert') end
+  TriggerClientEvent('bagcity:client:gear', src, { armor = 100 })
+  say(src, 'لبست درعاً كاملاً.', 'good')
+end
+
+function Actions.policekit(src)
+  if not Sec.rate(src, 'gear', 800) or not isCop(src) then return end
+  if not nearPlaceType(src, 'police') then return say(src, 'استلام المعدات من مركز الشرطة فقط.') end
+  local left = gearWait(src, 'kit', Config.PoliceKitCooldown)
+  if left > 0 then return say(src, ('استلمت معداتك قبل شوي. انتظر %d ثانية.'):format(left)) end
+  for _, k in ipairs(Config.PoliceKit) do giveGear(src, k.weapon, k.ammo, {}) end
+  TriggerClientEvent('bagcity:client:gear', src, { armor = 100 })
+  say(src, 'استلمت معدات الشرطة.', 'good')
+end
 
 -- ----- التجربة -----
 function Actions.tp(src, args)
   if not IsPlayerAceAllowed(src, 'bagcity.dev') then return end
-  local spot = heistById[args[1] or ''] or launderById[args[1] or ''] or placeById[args[1] or '']
+  local spot = spotById(args[1] or '')
   if not spot then return end
-  TriggerClientEvent('bagcity:client:tp', src, spot.coords[1], spot.coords[2], spot.coords[3] + 1.0)
+  local kind = (args[2] == 'inside' or args[2] == 'bench') and args[2] or 'main'
+  local pt = spotPoint(spot, kind) or spotPoint(spot, 'main')
+  TriggerClientEvent('bagcity:client:tp', src, pt[1], pt[2], pt[3] + 1.0)
+end
+
+-- تحديد نقطة بمكانك الحالي (تنحفظ وتتطبق على الجميع فوراً)
+function Actions.setpoint(src, args)
+  if not IsPlayerAceAllowed(src, 'bagcity.dev') then return end
+  local spot, kind = spotById(args[1] or ''), args[2]
+  if not spot or not Sec.rate(src, 'setpoint', 1000) then return end
+  if kind ~= 'main' and kind ~= 'inside' and kind ~= 'bench' then return end
+  if kind ~= 'main' and not placeById[spot.id] then return say(src, 'النقطة هذي للأماكن فقط (مقر/بيت).') end
+  local c = Sec.coords(src)
+  if not c then return end
+  overrides[spot.id] = overrides[spot.id] or {}
+  overrides[spot.id][kind] = { c[1], c[2], c[3] }
+  SetResourceKvp('points', json.encode(overrides))
+  TriggerClientEvent('bagcity:client:points', -1, overrides)
+  say(src, ('تم حفظ النقطة (%s) لـ %s.'):format(kind == 'main' and 'الباب/الموقع' or (kind == 'inside' and 'داخل الغرفة' or 'الطاولة'), spot.label), 'good')
+end
+
+function Actions.resetpoint(src, args)
+  if not IsPlayerAceAllowed(src, 'bagcity.dev') then return end
+  local spot, kind = spotById(args[1] or ''), args[2]
+  if not spot or not overrides[spot.id] then return end
+  overrides[spot.id][kind or ''] = nil
+  SetResourceKvp('points', json.encode(overrides))
+  TriggerClientEvent('bagcity:client:points', -1, overrides)
+  say(src, 'رجعت النقطة للإعدادات الأصلية.', 'info')
 end
 
 function Actions.here(src)
@@ -508,10 +648,10 @@ RegisterNetEvent('bagcity:server:startRob', function(id)
   if p.rob or p.laund or p.raid then return end
   if not p.masked then return say(src, 'لازم تلبس القناع أول.') end
   if (cooldowns[id] or 0) > os.time() then return say(src, 'المحل انسرق قبل شوي.') end
-  if not Sec.near(src, h.coords, h.radius + 2.0) then return Sec.strike(src, 'rob out of range') end
+  if not Sec.near(src, spotPoint(h, 'main'), h.radius + 2.0) then return Sec.strike(src, 'rob out of range') end
   if p.bag and p.bag.value >= Config.MaxBagValue then return say(src, 'حقيبتك ممتلئة.') end
 
-  p.rob = { id = id, t = os.time(), inc = addIncident('heist', h.coords, { who = p.alias, label = h.label, heat = h.heat }) }
+  p.rob = { id = id, t = os.time(), inc = addIncident('heist', spotPoint(h, 'main'), { who = p.alias, label = h.label, heat = h.heat }) }
   cooldowns[id] = os.time() + h.cooldown
   heat[h.district] = (heat[h.district] or 0) + h.heat
   alertCops(h)
@@ -534,7 +674,7 @@ RegisterNetEvent('bagcity:server:finishRob', function()
   local incId = p.rob.inc
   p.rob = nil
   if elapsed < h.duration - 1 then return Sec.strike(src, 'rob finished too early') end
-  if not Sec.near(src, h.coords, h.radius + 3.0) then
+  if not Sec.near(src, spotPoint(h, 'main'), h.radius + 3.0) then
     cooldowns[h.id] = os.time() + 30
     return say(src, 'ابتعدت عن المحل، فشلت السرقة.')
   end
@@ -568,7 +708,10 @@ end)
 
 RegisterNetEvent('bagcity:server:requestSync', function()
   local src = source
-  if Sec.rate(src, 'sync', 3000) then TriggerClientEvent('bagcity:client:drops', src, dropList()) end
+  if Sec.rate(src, 'sync', 3000) then
+    TriggerClientEvent('bagcity:client:drops', src, dropList())
+    TriggerClientEvent('bagcity:client:points', src, overrides)
+  end
 end)
 
 -- الموت: السيرفر يتحقق من صحة اللاعب بنفسه قبل ما يُسقط الحقيبة
@@ -596,7 +739,7 @@ RegisterNetEvent('bagcity:server:startLaunder', function(id)
   if not l then return Sec.strike(src, 'bad launderer id') end
   local p = getP(src)
   if p.rob or p.laund or p.raid or not p.bag then return end
-  if not Sec.near(src, l.coords, l.radius + 2.0) then return Sec.strike(src, 'launder out of range') end
+  if not Sec.near(src, spotPoint(l, 'main'), l.radius + 2.0) then return Sec.strike(src, 'launder out of range') end
   p.laund = { id = id, t = os.time() }
   TriggerClientEvent('bagcity:client:launderStart', src, id, Config.LaunderTime)
 end)
@@ -614,7 +757,7 @@ RegisterNetEvent('bagcity:server:finishLaunder', function()
   local elapsed = os.time() - p.laund.t
   p.laund = nil
   if elapsed < Config.LaunderTime - 1 then return Sec.strike(src, 'launder finished too early') end
-  if not Sec.near(src, l.coords, l.radius + 3.0) then return say(src, 'ابتعدت، انلغى التبييض.') end
+  if not Sec.near(src, spotPoint(l, 'main'), l.radius + 3.0) then return say(src, 'ابتعدت، انلغى التبييض.') end
 
   local bag = p.bag
   local cut = clamp(Config.LaunderMinCut + bag.heat / 100 * (Config.LaunderMaxCut - Config.LaunderMinCut), Config.LaunderMinCut, Config.LaunderMaxCut)
@@ -686,7 +829,7 @@ local function save()
 end
 
 -- للاختبار الآلي فقط
-if __BAGCITY_TEST then __BT = { minuteTick = minuteTick, dropCleanup = dropCleanup, zoneTick = zoneTick, trackHolders = trackHolders, stashes = stashes, P = P } end
+if __BAGCITY_TEST then __BT = { overrides = overrides, minuteTick = minuteTick, dropCleanup = dropCleanup, zoneTick = zoneTick, trackHolders = trackHolders, stashes = stashes, P = P } end
 
 CreateThread(function() while true do Wait(60000); minuteTick() end end)
 CreateThread(function() while true do Wait(30000); dropCleanup() end end)
@@ -713,5 +856,6 @@ AddEventHandler('playerDropped', function()
   end
   for t, pd in pairs(pending) do if pd.cop == src then pending[t] = nil end end
   P[src], pending[src], copsDuty[src], pressDuty[src], zoneOut[src] = nil, nil, nil, nil, nil
+  owned[src], mods[src], gearCooldown[src] = nil, nil, nil
   Sec.clear(src)
 end)

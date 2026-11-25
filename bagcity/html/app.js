@@ -27,6 +27,8 @@ let st = {};            // حالة اللاعب من السيرفر
 let nearby = [];        // لاعبون قريبون
 let places = [];        // أماكن (من الإعدادات)
 let bribe = { min: 5000, max: 200000 };
+let gear = { weapons: [], armor: 0 };
+let near = { bench: false, armory: false };
 let tab = 'citizen';
 let picker = null;      // { title, items }
 let menuOpen = false;
@@ -42,6 +44,7 @@ const TABS = [
   { id: 'chase', icon: '🚨', title: 'القبض عليك', show: () => !!st.arrested },
   { id: 'police', icon: '🛡️', title: 'قائمة الشرطة', show: () => st.copAllowed || st.cop },
   { id: 'press', icon: '📰', title: 'قائمة الصحافة', show: () => st.pressAllowed || st.press },
+  { id: 'bench', icon: '🔧', title: 'طاولة الأدوات', show: () => near.bench },
   { id: 'tools', icon: '⚙️', title: 'أدوات التجربة', show: () => st.dev || st.ia },
 ];
 
@@ -62,10 +65,51 @@ function nearbyPicker(title, actionName) {
 
 function placesPicker(title, kindFilter, onPick) {
   return () => {
-    const items = places.filter((p) => !kindFilter || kindFilter(p)).map((p) => ({ icon: p.icon, label: p.label, hint: p.kind, run: () => { onPick(p); picker = null; render(); } }));
+    const items = places.filter((p) => !kindFilter || kindFilter(p)).map((p) => ({ icon: p.icon, label: p.label, hint: p.kind, run: () => { picker = null; onPick(p); if (!picker) render(); } }));
     picker = { title, items };
     render();
   };
+}
+
+const hasGun = (id) => (st.guns || []).includes(id);
+
+function weaponsPicker() {
+  const items = gear.weapons.map((w) => ({
+    icon: '🔫', label: w.label, hint: `${money(w.price)} كاش · ذخيرة ${w.ammo}`,
+    disabled: (st.cash || 0) < w.price, run: () => { act('buyweapon', [w.id]); picker = null; render(); },
+  }));
+  picker = { title: 'اختر السلاح', items };
+  render();
+}
+
+function ownedPicker(title, build) {
+  return () => {
+    const items = gear.weapons.filter((w) => hasGun(w.id)).map(build);
+    if (!items.length) items.push({ icon: '🚫', label: 'ما تملك أسلحة', hint: 'اشترِ سلاحاً أول', disabled: true });
+    picker = { title, items };
+    render();
+  };
+}
+
+function modPicker(w) {
+  const done = (st.mods && st.mods[w.id]) || {};
+  const items = w.mods.map((m) => ({
+    icon: '🔧', label: m.label, hint: done[m.id] ? 'مركّب' : `${money(m.price)} كاش`,
+    disabled: !!done[m.id] || (st.cash || 0) < m.price, run: () => { act('buymod', [w.id, m.id]); picker = null; render(); },
+  }));
+  if (!items.length) items.push({ icon: '🚫', label: 'ما فيه تعديلات', hint: '', disabled: true });
+  picker = { title: `تعديل ${w.label}`, items };
+  render();
+}
+
+// يختار النوع (الباب / داخل الغرفة / الطاولة) للأماكن، أو ينفّذ مباشرة لغيرها
+function kindPicker(spot, title, onKind) {
+  if (!spot.place) return onKind('main');
+  const items = [{ icon: '🚪', label: 'الباب', hint: 'نقطة الاقتحام', run: () => onKind('main') },
+    { icon: '🛋️', label: 'داخل الغرفة', hint: 'نقطة التخبئة', run: () => onKind('inside') }];
+  if (spot.gang) items.push({ icon: '🔧', label: 'طاولة الأدوات', hint: 'داخل المقر', run: () => onKind('bench') });
+  picker = { title, items };
+  render();
 }
 
 function bribePicker() {
@@ -101,6 +145,7 @@ function itemsFor(id) {
       { icon: '🛡️', label: st.cop ? 'خروج من الخدمة' : 'دخول الخدمة', hint: 'عند مركز الشرطة', disabled: !st.copAllowed, run: () => act('duty') },
       { icon: '🚔', label: 'قبض', hint: 'على لاعب قريب (ملثم أو معه حقيبة)', disabled: !st.cop, run: nearbyPicker('اختر من تقبض عليه', 'arrest') },
       { icon: '🔍', label: 'فحص أثر الفلوس', hint: 'يكشف رقم حقيبة بُيّضت مؤخراً', disabled: !st.cop, run: nearbyPicker('اختر من تفحصه', 'scan') },
+      { icon: '🔫', label: 'استلام المعدات', hint: 'مجاناً من مركز الشرطة (كل ٥ دقائق)', disabled: !st.cop || !near.armory, run: () => act('policekit') },
       { icon: '🗂️', label: 'قائمة الأدلة', hint: 'اقرأ سجل حياة أي حقيبة', disabled: !st.cop, run: () => act('evidencelist') },
       { icon: '✅', label: 'قبول الرشوة', hint: st.bribeOffer ? `${money(st.bribeOffer.amount)} (تنسجل في سجل الفساد)` : 'لا يوجد عرض', disabled: !st.bribeOffer, run: () => act('acceptbribe') },
       { icon: '❌', label: 'رفض الرشوة', hint: 'تصادر الحقيبة', disabled: !st.bribeOffer, run: () => act('refusebribe') },
@@ -111,11 +156,19 @@ function itemsFor(id) {
       { icon: '📸', label: 'تصوير الحدث', hint: 'أقرب حدث حقيقي خلال ٣٠ متر', disabled: !st.press, run: () => act('snap') },
       { icon: '📝', label: 'نشر خبر', hint: 'العنوان يطلع للجميع', disabled: !st.press, run: () => askText('عنوان الخبر', (t) => act('publish', [t])) },
     ];
+    case 'bench': return [
+      CLOSE,
+      { icon: '🔫', label: 'أسلحة', hint: `رصيدك كاش: ${money(st.cash)}`, run: weaponsPicker },
+      { icon: '🔧', label: 'تعديل سلاح', hint: 'كاتم، مخزن موسّع، منظار...', disabled: !(st.guns || []).length, run: ownedPicker('اختر السلاح للتعديل', (w) => ({ icon: '🔫', label: w.label, hint: `${w.mods.length} تعديلات`, run: () => modPicker(w) })) },
+      { icon: '🎯', label: 'تعبئة ذخيرة', hint: 'تكلفتها ٣٠٪ من سعر السلاح', disabled: !(st.guns || []).length, run: ownedPicker('اختر السلاح للتعبئة', (w) => ({ icon: '🎯', label: w.label, hint: `${money(w.refill)} كاش · +${w.ammo}`, disabled: (st.cash || 0) < w.refill, run: () => { act('refill', [w.id]); picker = null; render(); } })) },
+      { icon: '🛡️', label: 'درع', hint: `${money(gear.armor)} كاش`, disabled: (st.cash || 0) < gear.armor, run: () => act('buyarmor') },
+    ];
     case 'tools': return [
       CLOSE,
       { icon: '📒', label: 'سجل الرشاوى', hint: 'الشؤون الداخلية', disabled: !st.ia, run: () => act('ledger') },
-      { icon: '🧭', label: 'انتقال سريع', hint: 'لأي مكان في الإعدادات', disabled: !st.dev, run: placesPicker('انتقال سريع', null, (p) => act('tp', [p.id])) },
-      { icon: '📌', label: 'إحداثياتي', hint: 'لتعديل مكان في config.lua', disabled: !st.dev, run: () => act('here') },
+      { icon: '🧭', label: 'انتقال سريع', hint: 'لأي مكان في الإعدادات', disabled: !st.dev, run: placesPicker('انتقال سريع', null, (p) => kindPicker(p, 'انتقل إلى...', (k) => { act('tp', [p.id, k]); picker = null; render(); })) },
+      { icon: '📌', label: 'تحديد نقطة', hint: 'قف بالمكان الصح، يحفظ نقطتك الحالية', disabled: !st.dev, run: placesPicker('أي مكان تحدد له نقطة؟', null, (p) => kindPicker(p, 'أي نقطة؟', (k) => { act('setpoint', [p.id, k]); picker = null; render(); })) },
+      { icon: '📍', label: 'إحداثياتي', hint: 'للمرجع', disabled: !st.dev, run: () => act('here') },
     ];
     default: return [CLOSE];
   }
@@ -249,6 +302,8 @@ function openMenu(msg) {
   nearby = msg.nearby || [];
   places = msg.places || places;
   if (msg.bribe) bribe = msg.bribe;
+  if (msg.gear) gear = msg.gear;
+  if (msg.near) near = msg.near;
   if (msg.state) st = msg.state;
   $('#menu').hidden = false;
   render();
@@ -296,6 +351,7 @@ window.addEventListener('message', (e) => {
     case 'doc': showDoc(d.title, d.lines); break;
     case 'list': showDoc(d.title, null, d.items); break;
     case 'prompt': { const p = $('#prompt'); p.textContent = d.text || ''; p.hidden = !d.text; break; }
+    case 'progresslabel': $('#progress').querySelector('span').textContent = d.label; break;
     case 'progress': if (d.hide) $('#progress').hidden = true; else showProgress(d.label, d.seconds); break;
     case 'zone': { const z = $('#zone'); z.hidden = !(d.left > 0); z.textContent = `ارجع لحدود المدينة! ${d.left} ثانية`; break; }
     default: break;

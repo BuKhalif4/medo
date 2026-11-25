@@ -69,11 +69,13 @@ Config.Stash = {
 Config.DutyAtHQ = true  -- دخول الخدمة (وضع التجربة) يحتاج تكون عند مركز الشرطة
 
 -- ===== الأماكن (أقرب شيء لنظام ROB RUN: مركز شرطة + مقرات + بيوت) =====
--- type: police | gang | house. الإحداثيات تقريبية: انتقل بالقائمة (أدوات) وعدّلها
+-- type: police | gang | house.
+-- coords = الباب (الاقتحام). inside = نقطة التخبئة داخل الغرفة. bench = طاولة الأدوات (مقرات العصابات فقط).
+-- لو ما حددت inside/bench تُستخدم نقطة الباب. الأسهل: قف مكانها بالقائمة (أدوات التجربة ← تحديد نقطة) وتنحفظ.
 Config.Places = {
   { id = 'hq',     type = 'police', label = 'مركز الشرطة',         tag = 'Police HQ',    coords = {441.2, -981.9, 30.7},    radius = 4.0 },
-  { id = 'gang1',  type = 'gang',   label = 'مقر عصابة الجروف',    tag = 'Gang hideout', coords = {-14.7, -1441.8, 31.1},   radius = 3.5, cool = 2 },
-  { id = 'gang2',  type = 'gang',   label = 'مقر عصابة الفورم',    tag = 'Gang hideout', coords = {86.0, -1927.0, 20.8},    radius = 3.5, cool = 2 },
+  { id = 'gang1',  type = 'gang',   label = 'مقر عصابة الجروف',    tag = 'Gang hideout', coords = {-14.7, -1441.8, 31.1},   radius = 3.5, cool = 2, bench = nil },
+  { id = 'gang2',  type = 'gang',   label = 'مقر عصابة الفورم',    tag = 'Gang hideout', coords = {86.0, -1927.0, 20.8},    radius = 3.5, cool = 2, bench = nil },
   { id = 'house1', type = 'house',  label = 'بيت آمن - الشاطئ',    tag = 'Safehouse',    coords = {-1150.0, -1521.0, 10.6}, radius = 3.0, cool = 1 },
   { id = 'house2', type = 'house',  label = 'بيت آمن - وسط المدينة', tag = 'Safehouse',  coords = {-47.3, -584.0, 38.2},    radius = 3.0, cool = 1 },
 }
@@ -98,3 +100,28 @@ Config.Honeypots = {
   'bagcity:giveMoney', 'bagcity:addBag', 'bagcity:setHeat', 'bagcity:server:giveBag',
   'bagcity:server:addMoney', 'bagcity:server:clearCooldown', 'bagcity:admin:setCop',
 }
+
+-- ===== الأسلحة والمعدات (طاولة الأدوات في مقرات العصابات، ومركز الشرطة للشرطة) =====
+-- price = السعر (كاش). ammo = الذخيرة اللي تجي معه. refill = تعبئة الذخيرة تكلف 30% من السعر
+-- limitSeconds = أقل مدة بين شراءين (للقاذف). mods = تعديلات (price)
+-- أسماء التعديلات (COMPONENT_*) ممكن يكون فيها خطأ بسيط، لو ما اشتغل تعديل قل لي.
+Config.Weapons = {
+  { id = 'pistol',  label = 'مسدس',        weapon = 'WEAPON_PISTOL',        price = 2500,   ammo = 48,
+    mods = { { id = 'supp', label = 'كاتم صوت', comp = 'COMPONENT_AT_PI_SUPP_02', price = 3500 }, { id = 'clip', label = 'مخزن موسّع', comp = 'COMPONENT_PISTOL_CLIP_02', price = 2500 } } },
+  { id = 'smg',     label = 'رشاش صغير',   weapon = 'WEAPON_MICROSMG',      price = 18000,  ammo = 90,
+    mods = { { id = 'clip', label = 'مخزن موسّع', comp = 'COMPONENT_MICROSMG_CLIP_02', price = 4000 }, { id = 'scope', label = 'منظار', comp = 'COMPONENT_AT_SCOPE_MACRO', price = 3000 } } },
+  { id = 'shotgun', label = 'بامب أكشن',    weapon = 'WEAPON_PUMPSHOTGUN',   price = 22000,  ammo = 24,
+    mods = { { id = 'supp', label = 'كاتم صوت', comp = 'COMPONENT_AT_SR_SUPP', price = 5000 } } },
+  { id = 'rifle',   label = 'بندقية',       weapon = 'WEAPON_CARBINERIFLE',  price = 45000,  ammo = 120,
+    mods = { { id = 'clip', label = 'مخزن موسّع', comp = 'COMPONENT_CARBINERIFLE_CLIP_02', price = 6000 }, { id = 'grip', label = 'مقبض', comp = 'COMPONENT_AT_AR_AFGRIP', price = 3500 }, { id = 'scope', label = 'منظار', comp = 'COMPONENT_AT_SCOPE_MEDIUM', price = 5000 } } },
+  { id = 'rpg',     label = 'قاذف قنابل',   weapon = 'WEAPON_RPG',           price = 180000, ammo = 2, limitSeconds = 1800, mods = {} },
+}
+Config.ArmorPrice   = 3000
+Config.RefillRate   = 0.30
+Config.PoliceKit = {    -- مجاني لمن هو في الخدمة عند مركز الشرطة (مرة كل 5 دقائق)
+  { weapon = 'WEAPON_COMBATPISTOL', ammo = 120 },
+  { weapon = 'WEAPON_CARBINERIFLE', ammo = 150 },
+  { weapon = 'WEAPON_STUNGUN',      ammo = 1 },
+  { weapon = 'WEAPON_NIGHTSTICK',   ammo = 1 },
+}
+Config.PoliceKitCooldown = 300

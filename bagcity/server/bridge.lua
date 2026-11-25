@@ -68,6 +68,31 @@ function Bridge.removeBank(src, amount)
   return true
 end
 
+function Bridge.getCash(src)
+  if fw == 'qbx' or fw == 'qb' then
+    local pl = qbPlayer(src)
+    return pl and pl.PlayerData.money.cash or 0
+  elseif fw == 'esx' then
+    local xp = ESX.GetPlayerFromId(src)
+    return xp and xp.getMoney() or 0
+  end
+  return kvpBalance(src)
+end
+
+function Bridge.removeCash(src, amount)
+  amount = math.floor(amount)
+  if amount < 0 or Bridge.getCash(src) < amount then return false end
+  if amount == 0 then return true end
+  if fw == 'qbx' or fw == 'qb' then
+    return qbPlayer(src).Functions.RemoveMoney('cash', amount, 'bagcity-gear')
+  elseif fw == 'esx' then
+    ESX.GetPlayerFromId(src).removeMoney(amount)
+    return true
+  end
+  SetResourceKvp('bal_' .. Bridge.id(src), tostring(kvpBalance(src) - amount))
+  return true
+end
+
 function Bridge.isCop(src)
   if fw == 'qbx' or fw == 'qb' then
     local pl = qbPlayer(src)
