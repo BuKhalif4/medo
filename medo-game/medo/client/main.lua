@@ -9,6 +9,7 @@ local origModel, prevMask = nil, nil
 local partyBlips = {}
 local lastPrompt, lastDeath = '', 0
 local aimedMs, aimClerk = 0, nil
+local changingModel = false
 
 local function nui(t) SendNUIMessage(t) end
 local function vec(c) return vec3(c[1], c[2], c[3]) end
@@ -54,6 +55,7 @@ local function applyMask(on)
 end
 
 RegisterNetEvent('medo:client:role', function(role)
+  changingModel = true
   if role == 'police' then
     if not origModel then origModel = GetEntityModel(PlayerPedId()) end
     setModel(Config.PoliceModel)
@@ -63,6 +65,8 @@ RegisterNetEvent('medo:client:role', function(role)
     SetPedDefaultComponentVariation(PlayerPedId())
     origModel = nil
   end
+  Wait(300)
+  changingModel = false
 end)
 
 local menuOpenFn
@@ -101,6 +105,7 @@ RegisterNetEvent('medo:client:tp', function(x, y, z)
 end)
 
 RegisterNetEvent('medo:client:gear', function(g)
+  while changingModel do Wait(50) end    -- لا تعطي سلاح قبل ما يخلص تغيير الشخصية (زي الشرطة)
   local ped = PlayerPedId()
   if g.armor then SetPedArmour(ped, g.armor) end
   if g.weapon then
