@@ -1,4 +1,1 @@
-[home] تعريف ‪10.0.26100.1150‬
-[startup] ناشر غير معروف  •  All users (Registry)
-[startup] ناشر غير معروف  •  Startup folder (all users)
 [log] العربية
