@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>MEDO</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- شريط الحالة -->
+  <div id="loc" class="loc" hidden><b id="locArea"></b><span id="locStreet"></span></div>
+  <div id="role" class="role" hidden></div>
+  <div id="obj" class="obj" hidden></div>
+  <div id="bars" class="bars" hidden><div class="bar hp"><i id="hpFill"></i></div><div class="bar ar"><i id="arFill"></i></div></div>
+  <div id="hotbar" class="hotbar" hidden></div>
+
+  <!-- رسائل -->
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <div id="banner" class="banner" hidden><b></b><span></span></div>
+  <div id="zone" class="zone" hidden></div>
+  <div id="prompt" class="prompt" hidden></div>
+  <div id="progress" class="progress" hidden><span></span><div class="track"><i></i></div></div>
+
+  <!-- قائمة التاجر -->
+  <section id="dealer" class="ctx" hidden>
+    <header><small>تاجر</small><b>السوق السوداء</b></header>
+    <button type="button" data-go="market"><span>🛒</span> السوق السوداء</button>
+    <button type="button" data-go="stash"><span>📦</span> التخزين</button>
+    <button type="button" disabled><span>🔑</span> خزنة المفاتيح <em>قريباً</em></button>
+    <button type="button" data-go="close" class="x"><span>✖</span> إغلاق</button>
+  </section>
+
+  <!-- التخزين -->
+  <section id="stash" class="ctx wide" hidden>
+    <header><small>تاجر</small><b>التخزين</b></header>
+    <p id="stashInfo" class="note"></p>
+    <div class="two">
+      <button type="button" id="stDep" class="go">إيداع كل الغنائم</button>
+      <button type="button" id="stWit" class="go">سحب الغنائم</button>
+    </div>
+    <button type="button" data-go="close" class="x"><span>✖</span> إغلاق</button>
+  </section>
+
+  <!-- السوق السوداء -->
+  <section id="market" class="panel" hidden>
+    <header class="pn-head">
+      <h1>السوق السوداء</h1>
+      <nav id="mkTabs" class="mk-tabs"></nav>
+      <div class="wallet"><span>كاش</span><b id="mkCash">0</b></div>
+      <button class="pn-close" id="mkClose" type="button" aria-label="إغلاق">✖</button>
+    </header>
+    <div class="pn-body"><div id="mkMain" class="mk-main"></div><aside id="mkSide" class="mk-side"></aside></div>
+    <footer class="pn-foot">Esc إغلاق · اضغط البطاقة للشراء · الدرجات الأعلى تُفتح من «الشحنات»</footer>
+  </section>
+
+  <!-- اختيار المعدات (الشرطة) -->
+  <section id="ranks" class="panel" hidden>
+    <header class="pn-head"><h1>اختيار المعدات</h1><p class="pn-sub" id="rkSub"></p><button class="pn-close" id="rkClose" type="button" aria-label="إغلاق">✖</button></header>
+    <div class="pn-body solo"><div id="rkCards" class="rk-cards"></div></div>
+    <footer class="pn-foot">الرتب العليا تحتاج نقاط: كل قبض ومصادرة ناجحة تزيدها</footer>
+  </section>
+
+  <!-- الحقيبة والمجموعة -->
+  <section id="inventory" class="panel" hidden>
+    <header class="pn-head">
+      <h1>ملفي</h1>
+      <nav id="ivTabs" class="mk-tabs"></nav>
+      <div class="wallet"><span>كاش</span><b id="ivCash">0</b></div>
+      <button class="pn-close" id="ivClose" type="button" aria-label="إغلاق">✖</button>
+    </header>
+    <div class="pn-body solo"><div id="ivMain" class="mk-main"></div></div>
+    <footer class="pn-foot">F5 لفتح الملف · الغنائم تتباع عند نقطة بيع</footer>
+  </section>
+
+  <div id="ammoModal" class="modal" hidden>
+    <form id="ammoForm">
+      <h2 id="ammoTitle"></h2>
+      <div class="ammo-row"><span>1</span><input id="ammoRange" type="range" min="1" max="360" value="60"><span id="ammoQty">60</span></div>
+      <p class="ammo-price">السعر: <b id="ammoPrice">0</b></p>
+      <div class="row"><button type="submit" class="ok">شراء</button><button type="button" id="ammoCancel">إلغاء</button></div>
+    </form>
+  </div>
+<script src="app.js"></script>
+</body>
+</html>
