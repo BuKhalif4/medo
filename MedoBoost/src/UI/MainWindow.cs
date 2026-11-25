@@ -112,6 +112,7 @@ public partial class MainWindow : Window
 
         HardwareMonitor.Instance.Updated += s => Dispatcher.BeginInvoke(() =>
         {
+            if (miniCpu == null) return;   // the mini readout only exists in the classic sidebar
             miniCpu.Text = $"{s.CpuLoad:0}%"; miniCpuBar.Value = s.CpuLoad;
             miniRam.Text = $"{s.RamLoad:0}%"; miniRamBar.Value = s.RamLoad;
         });
