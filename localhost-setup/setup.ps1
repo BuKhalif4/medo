@@ -11,7 +11,7 @@ New-Item -ItemType Directory -Force -Path $server, $data | Out-Null
 # 1) ملفات السيرفر الرسمية (FXServer.exe)
 if (-not (Test-Path (Join-Path $server 'FXServer.exe'))) {
   try {
-    Write-Host '> تحميل ملفات السيرفر...'
+    Write-Host '> Downloading FiveM server files...'
     $info = Invoke-RestMethod 'https://changelogs-live.fivem.net/api/changelog/versions/win32/server'
     $url  = if ($info.recommended_download) { $info.recommended_download } else { $info.latest_download }
     $ext  = [IO.Path]::GetExtension(([Uri]$url).AbsolutePath)
@@ -19,21 +19,21 @@ if (-not (Test-Path (Join-Path $server 'FXServer.exe'))) {
     Invoke-WebRequest $url -OutFile $file
     tar -xf $file -C $server
   } catch {
-    Write-Host '! تعذر التحميل التلقائي: ' $_.Exception.Message
+    Write-Host '! Automatic download failed: ' $_.Exception.Message
   }
 }
 if (-not (Test-Path (Join-Path $server 'FXServer.exe'))) {
   Write-Host ''
-  Write-Host '=== حمّل ملفات السيرفر يدوياً (دقيقتين) ==='
-  Write-Host '1) افتح: https://runtime.fivem.net/artifacts/fivem/build_server_windows/master/'
-  Write-Host '2) حمّل الأحدث (الزر الأخضر LATEST RECOMMENDED) وفك الضغط بـ 7-Zip داخل:' $server
-  Write-Host '3) شغّل setup.bat مرة ثانية.'
+  Write-Host '=== Manual download (2 minutes) ==='
+  Write-Host '1) Open: https://runtime.fivem.net/artifacts/fivem/build_server_windows/master/'
+  Write-Host '2) Download the newest (green LATEST RECOMMENDED button) and extract it with 7-Zip into:' $server
+  Write-Host '3) Run setup.bat again.'
   exit 1
 }
 
 # 2) ملفات السيرفر الأساسية (chat وغيرها) من cfx-server-data
 if (-not (Test-Path (Join-Path $data 'resources'))) {
-  Write-Host '> تحميل server-data...'
+  Write-Host '> Downloading server-data...'
   $zip = Join-Path $env:TEMP 'cfx-server-data.zip'
   $tmp = Join-Path $env:TEMP 'cfx-server-data-x'
   Invoke-WebRequest 'https://github.com/citizenfx/cfx-server-data/archive/refs/heads/master.zip' -OutFile $zip
@@ -46,13 +46,13 @@ if (-not (Test-Path (Join-Path $data 'resources'))) {
 $dest = Join-Path $data 'resources\bagcity'
 if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
 Copy-Item (Join-Path $repo 'bagcity') $dest -Recurse -Force
-Write-Host '> تم نسخ bagcity'
+Write-Host '> bagcity copied'
 
 # 4) server.cfg (ما نكتب فوق مفتاحك لو موجود)
 $cfg = Join-Path $data 'server.cfg'
 if (-not (Test-Path $cfg)) {
   Copy-Item (Join-Path $here 'server.cfg') $cfg
-  $key = Read-Host 'الصق مفتاح الترخيص من keymaster.fivem.net'
+  $key = Read-Host 'Paste your license key from keymaster.fivem.net'
   (Get-Content $cfg -Raw).Replace('PUT_YOUR_KEY_HERE', $key.Trim()) | Set-Content $cfg -Encoding UTF8
 }
 
@@ -72,6 +72,6 @@ start "" "fivem://connect/localhost:30120"
 Set-Content $play $playText -Encoding ASCII
 
 Write-Host ''
-Write-Host 'تم! من الحين تشغّل اللعب بملف واحد: C:\FXServer\play.bat'
-$go = Read-Host 'تشغّله الحين؟ (y/n)'
+Write-Host 'Done! From now on start everything with: C:\FXServer\play.bat'
+$go = Read-Host 'Start the server and join now? (y/n)'
 if ($go -eq 'y') { Start-Process $play }
