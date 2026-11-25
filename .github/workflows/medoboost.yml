@@ -36,6 +36,27 @@ jobs:
           Get-ChildItem "$env:LOCALAPPDATA\MedoBoost\logs" -ErrorAction SilentlyContinue | ForEach-Object { Get-Content $_.FullName -Tail 80 }
           if ($p.ExitCode -ne 0) { exit 1 }
 
+      - name: Self-test, English
+        shell: pwsh
+        run: |
+          $shots = Join-Path $PWD 'shots-en'
+          $p = Start-Process -FilePath 'out\KHABoost.exe' -ArgumentList '--selftest', "`"$shots`"", 'en', 'prime' -PassThru
+          if (-not $p.WaitForExit(180000)) { $p.Kill(); Write-Error 'English self-test timed out' }
+          Write-Host "exit code: $($p.ExitCode)"
+          if (Test-Path "$shots\untranslated.txt") { Get-Content "$shots\untranslated.txt" }
+          if (Test-Path "$shots\error.txt") { Get-Content "$shots\error.txt" }
+          if ($p.ExitCode -ne 0) { exit 1 }
+
+      - name: Self-test, classic design
+        shell: pwsh
+        run: |
+          $shots = Join-Path $PWD 'shots-classic'
+          $p = Start-Process -FilePath 'out\KHABoost.exe' -ArgumentList '--selftest', "`"$shots`"", 'ar', 'classic' -PassThru
+          if (-not $p.WaitForExit(180000)) { $p.Kill(); Write-Error 'classic self-test timed out' }
+          Write-Host "exit code: $($p.ExitCode)"
+          if (Test-Path "$shots\error.txt") { Get-Content "$shots\error.txt" }
+          if ($p.ExitCode -ne 0) { exit 1 }
+
       - name: Action test (really apply/revert tweaks, debloat, clean - throwaway VM)
         shell: pwsh
         run: |
@@ -62,6 +83,9 @@ jobs:
           if (-not (Test-Path shots)) { exit 0 }
           New-Item -ItemType Directory -Force MedoBoost/screenshots | Out-Null
           Copy-Item shots/*.png MedoBoost/screenshots/ -Force
+          New-Item -ItemType Directory -Force MedoBoost/screenshots/en, MedoBoost/screenshots/classic | Out-Null
+          if (Test-Path shots-en) { Copy-Item shots-en/*.png MedoBoost/screenshots/en/ -Force; Copy-Item shots-en/untranslated.txt MedoBoost/screenshots/en/ -Force -ErrorAction SilentlyContinue }
+          if (Test-Path shots-classic) { Copy-Item shots-classic/*.png MedoBoost/screenshots/classic/ -Force }
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add MedoBoost/screenshots

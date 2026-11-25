@@ -26,6 +26,9 @@ public class AppSettings
     public bool AutoGamePriority { get; set; } = false;
     public bool AutoUpdateCheck { get; set; } = true;
     public string DismissedUpdateTag { get; set; } = "";
+    public string Language { get; set; } = "ar";          // ar | en
+    public string Design { get; set; } = "prime";         // prime | classic
+    public bool WelcomeDone { get; set; } = false;
     // Game Ready (what "جهّز للعب" does)
     public bool GameReadyClose { get; set; } = true;
     public bool GameReadyRam { get; set; } = true;

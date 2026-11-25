@@ -27,7 +27,26 @@ public class LogPage : PageBase
         var autoUpd = Ui.Check(Ui.Txt("تحقق من التحديثات تلقائياً عند التشغيل", 12.5, "TextDim"), Settings.Current.AutoUpdateCheck, v => { Settings.Current.AutoUpdateCheck = v; Settings.Save(); });
         var tray = Ui.Check(Ui.Txt("زر الإغلاق ✕ يخفي البرنامج بجانب الساعة بدل ما يسكّره (للخروج: كليك يمين على الأيقونة ← خروج)", 12.5, "TextDim"), Settings.Current.MinimizeToTray, v => { Settings.Current.MinimizeToTray = v; Settings.Save(); });
         var thermal = Ui.Check(Ui.Txt("نبّهني لما ترتفع حرارة المعالج أو الكرت", 12.5, "TextDim"), Settings.Current.ThermalAlerts, v => { Settings.Current.ThermalAlerts = v; Settings.Save(); });
-        var opts = Ui.Card(Ui.VStack(Ui.Txt("الإعدادات", 14, "Text", FontWeights.Bold).M(0, 0, 0, 10), autoUpd.M(0, 0, 0, 10), tray.M(0, 0, 0, 10), thermal), 16);
+        FrameworkElement Choice(string label, string[] ids, string[] names, string current, Action<string> pick)
+        {
+            var wp = new WrapPanel();
+            string g = Guid.NewGuid().ToString();
+            for (int i = 0; i < ids.Length; i++)
+            {
+                string id = ids[i];
+                var rb = new RadioButton { Style = Ui.S("Pill"), Content = new TextBlock { Text = names[i] }, GroupName = g, IsChecked = id == current };
+                rb.Checked += (_, _) => { if (id != current) pick(id); };
+                wp.Children.Add(rb);
+            }
+            return Ui.Cols(new[] { "130", "*" }, Ui.Txt(label, 12.5, "TextDim"), wp);
+        }
+        var langRow = Choice("اللغة", new[] { "ar", "en" }, new[] { "العربية", "English" }, Settings.Current.Language, v => { Settings.Current.Language = v; Settings.Save(); Notify.Push("info", "اللغة", "جاري إعادة تشغيل البرنامج..."); Program.Restart(); });
+        var designRow = Choice("التصميم", new[] { "prime", "classic" }, new[] { "Prime", "Classic" }, Settings.Current.Design, v => { Settings.Current.Design = v; Settings.Save(); Notify.Push("info", "التصميم", "جاري إعادة تشغيل البرنامج..."); Program.Restart(); });
+        var intro = Ui.Btn("عرض شاشة الترحيب", "\uE768", () => MainWindow.Instance.ShowWelcome(), "BtnGhost");
+        intro.HorizontalAlignment = HorizontalAlignment.Left;
+        var opts = Ui.Card(Ui.VStack(Ui.Txt("الإعدادات", 14, "Text", FontWeights.Bold).M(0, 0, 0, 12), langRow.M(0, 0, 0, 6), designRow.M(0, 0, 0, 6),
+            Ui.Txt("تغيير اللغة أو التصميم يعيد تشغيل البرنامج تلقائياً.", 11.5, "TextMute").M(0, 0, 0, 12),
+            autoUpd.M(0, 0, 0, 10), tray.M(0, 0, 0, 10), thermal.M(0, 0, 0, 12), intro), 16);
         var head = Ui.VStack(Ui.Title("السجل وحول البرنامج"), about.M(0, 14, 0, 12), opts.M(0, 0, 0, 14), Ui.Txt("سجل العمليات (مباشر)", 15, "Text", FontWeights.Bold).M(0, 0, 0, 8));
         Children.Add(head);
 

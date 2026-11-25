@@ -193,7 +193,7 @@ public class ProcessesPage : PageBase
             r.Cpu, r.Gpu, actions);
         r.Root = new Border
         {
-            Child = g2, Padding = new Thickness(14, 9, 14, 9), Margin = new Thickness(0, 0, 0, 6), CornerRadius = new CornerRadius(12),
+            Child = g2, Padding = new Thickness(14, 9, 14, 9), Margin = new Thickness(0, 0, 0, 6), CornerRadius = Ui.Cr(12),
             Background = Ui.B("Surface"), BorderBrush = Ui.B("BorderB"), BorderThickness = new Thickness(1),
         };
         r.Root.MouseEnter += (_, _) => r.Root.BorderBrush = Ui.B("Accent");

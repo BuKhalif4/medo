@@ -52,7 +52,7 @@ public class FreshPage : PageBase
         progress.Visibility = Visibility.Collapsed;
 
         var head = Ui.Cols(new[] { "Auto", "*" },
-            new Border { Width = 54, Height = 54, CornerRadius = new CornerRadius(16), Background = Ui.B("AccentGrad"), Child = Ui.Icon("", 24) },
+            new Border { Width = 54, Height = 54, CornerRadius = Ui.Cr(16), Background = Ui.B("AccentGrad"), Child = Ui.Icon("", 24) },
             Ui.VStack(Ui.Txt("بروفايل الألعاب + البرمجة", 18, "Text", FontWeights.Bold), Ui.Txt("كل شي بالترتيب الصح بضغطة وحدة. كل خطوة تنسجل وكل تويك يرجع.", 12.5, "TextDim")).M(14, 0, 0, 0));
         var profileCard = Ui.Card(Ui.VStack(
             head, Ui.Sep(),
@@ -114,7 +114,7 @@ public class FreshPage : PageBase
                 appChecks[a] = c;
                 var cell = new Border
                 {
-                    Width = 250, Margin = new Thickness(0, 0, 10, 8), Padding = new Thickness(12, 9, 12, 9), CornerRadius = new CornerRadius(10),
+                    Width = 250, Margin = new Thickness(0, 0, 10, 8), Padding = new Thickness(12, 9, 12, 9), CornerRadius = Ui.Cr(10),
                     Background = Ui.B("Surface2"), BorderBrush = Ui.B("BorderB"), BorderThickness = new Thickness(1), Child = c,
                 };
                 appRows[a] = cell;

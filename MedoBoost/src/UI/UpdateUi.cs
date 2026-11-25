@@ -61,7 +61,7 @@ public static class UpdateUi
         host.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         host.ColumnDefinitions.Add(new ColumnDefinition());
         host.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var icon = new Border { Width = 40, Height = 40, CornerRadius = new CornerRadius(12), Background = Ui.B("AccentGrad"), Child = Ui.Icon("", 18), Margin = new Thickness(0, 0, 0, 0) };
+        var icon = new Border { Width = 40, Height = 40, CornerRadius = Ui.Cr(12), Background = Ui.B("AccentGrad"), Child = Ui.Icon("", 18), Margin = new Thickness(0, 0, 0, 0) };
         Grid.SetColumn(texts, 1); texts.Margin = new Thickness(12, 0, 12, 0);
         Grid.SetColumn(buttons, 2); Grid.SetColumn(progress, 2);
         host.Children.Add(icon); host.Children.Add(texts); host.Children.Add(buttons); host.Children.Add(progress);
@@ -92,9 +92,9 @@ public static class UpdateUi
         };
 
         Banner.Child = host;
-        Banner.Background = Ui.Solid("#2A7C3AED");
+        Banner.Background = Ui.Prime ? Ui.B("Surface2") : Ui.Solid("#2A7C3AED");
         Banner.BorderBrush = Ui.B("Accent"); Banner.BorderThickness = new Thickness(1);
-        Banner.CornerRadius = new CornerRadius(14); Banner.Padding = new Thickness(14, 12, 14, 12);
+        Banner.CornerRadius = Ui.Cr(14); Banner.Padding = new Thickness(14, 12, 14, 12);
         Banner.Visibility = Visibility.Visible;
         Ui.FadeIn(Banner, 0, -10, 320);
     }

@@ -45,14 +45,15 @@ public class OverlayWindow : Window
         };
         Content = panel;
 
-        Add("fps", "FPS", "#FF22D3EE", true);
+        string A = Ui.Prime ? "#FFFF5B2E" : "#FF22D3EE", Bn = Ui.Prime ? "#FFECE8E1" : "#FFA78BFA", Gn = Ui.Prime ? "#FF9DB596" : "#FF4ADE80", Rm = Ui.Prime ? "#FFD9D3C5" : "#FFF472B6";
+        Add("fps", "FPS", A, true);
         Add("ft", "ms", "#FF9A9AB8");
-        Add("cpu", "CPU", "#FFA78BFA");
-        Add("ctemp", "CPU°", "#FFA78BFA");
-        Add("gpu", "GPU", "#FF4ADE80");
-        Add("gtemp", "GPU°", "#FF4ADE80");
-        Add("vram", "VRAM", "#FF4ADE80");
-        Add("ram", "RAM", "#FFF472B6");
+        Add("cpu", "CPU", Bn);
+        Add("ctemp", "CPU°", Bn);
+        Add("gpu", "GPU", Gn);
+        Add("gtemp", "GPU°", Gn);
+        Add("vram", "VRAM", Gn);
+        Add("ram", "RAM", Rm);
         Add("clock", "", "#FF9A9AB8");
 
         timer.Tick += (_, _) => Tick();

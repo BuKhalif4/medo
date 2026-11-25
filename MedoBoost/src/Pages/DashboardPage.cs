@@ -69,10 +69,10 @@ public class DashboardPage : PageBase
         // ---- charts + score
         var loadCard = Ui.Card(Ui.VStack(
             Ui.Cols(new[] { "*", "Auto" }, Ui.Txt("المعالج والكرت", 14, "Text", FontWeights.SemiBold),
-                Ui.HStack(12, Legend("#FF8B5CF6", "CPU"), Legend("#FF22C55E", "GPU"))),
+                Ui.HStack(12, Legend(Ui.Series(0), "CPU"), Legend(Ui.Series(1), "GPU"))),
             loadChart.M(0, 14, 0, 0)));
         var netCard = Ui.Card(Ui.VStack(
-            Ui.Cols(new[] { "*", "Auto" }, Ui.Txt("الشبكة", 14, "Text", FontWeights.SemiBold), Ui.HStack(12, Legend("#FF06B6D4", "تحميل"), Legend("#FFEC4899", "رفع"))),
+            Ui.Cols(new[] { "*", "Auto" }, Ui.Txt("الشبكة", 14, "Text", FontWeights.SemiBold), Ui.HStack(12, Legend(Ui.Series(0), "تحميل"), Legend(Ui.Series(1), "رفع"))),
             netChart.M(0, 14, 0, 0), netText.M(0, 8, 0, 0)));
 
         var scoreBtn = Ui.Btn("تحسين الآن", "", () => MainWindow.Instance.Navigate("fresh"));
@@ -211,7 +211,7 @@ public class DashboardPage : PageBase
         catch { return "Windows"; }
     }
 
-    static UIElement Legend(string color, string text) => Ui.HStack(6, new Border { Width = 10, Height = 10, CornerRadius = new CornerRadius(3), Background = Ui.Solid(color) }, Ui.Txt(text, 12, "TextDim"));
+    static UIElement Legend(string color, string text) => Ui.HStack(6, new Border { Width = 10, Height = 10, CornerRadius = Ui.Cr(3), Background = Ui.Solid(color) }, Ui.Txt(text, 12, "TextDim"));
 
     static UIElement Row(string glyph, string label, TextBlock value)
         => Ui.Cols(new[] { "Auto", "*", "Auto" }, Ui.Icon(glyph, 14, "Accent2").M(0, 0, 10, 0), Ui.Txt(label, 13, "TextDim"), value).M(0, 4, 0, 4);
@@ -228,7 +228,7 @@ public class DashboardPage : PageBase
     {
         var icon = new Border
         {
-            Width = 38, Height = 38, CornerRadius = new CornerRadius(10), Background = Ui.B("AccentGrad"),
+            Width = 38, Height = 38, CornerRadius = Ui.Cr(10), Background = Ui.B("AccentGrad"),
             Child = Ui.Icon(glyph, 17, "Text"),
         };
         var content = Ui.Cols(new[] { "Auto", "*" }, icon, Ui.VStack(Ui.Txt(title, 13.5, "Text", FontWeights.SemiBold), Ui.Txt(sub, 11.5, "TextDim")).M(12, 0, 0, 0));

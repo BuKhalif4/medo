@@ -24,11 +24,14 @@ public static class Program
         if (!selfTest)
         {
             mutex = new Mutex(true, "MedoBoost-SingleInstance", out bool first);
-            if (!first) { MessageBox.Show("KHA Boost شغال بالفعل.", "KHA Boost"); return 0; }
+            if (!first) { MessageBox.Show(L.T("KHA Boost شغال بالفعل."), "KHA Boost"); return 0; }
         }
 
         AppDomain.CurrentDomain.UnhandledException += (_, e) => Log.Error("Unhandled: " + e.ExceptionObject);
         Settings.Load();
+        if (selfTest && args.Length > 2) Settings.Current.Language = args[2];
+        if (selfTest && args.Length > 3) Settings.Current.Design = args[3];
+        L.InstallHook();
         Log.Info("KHA Boost started");
 
         var app = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
@@ -65,6 +68,21 @@ public static class Program
         return code;
     }
 
+    /// <summary>Close and start the app again (used after changing language or design).</summary>
+    public static void Restart()
+    {
+        try
+        {
+            var exe = Environment.ProcessPath;
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c ping 127.0.0.1 -n 3 >nul & start \"\" \"{exe}\"") { CreateNoWindow = true, UseShellExecute = false });
+        }
+        catch (Exception ex) { Log.Error("Restart: " + ex.Message); }
+        MainWindow.Quitting = true;
+        Tray.Remove();
+        Settings.Save();
+        Application.Current.Shutdown();
+    }
+
     /// <summary>CI check: opens every page, renders a screenshot of each, then exits. Exit code != 0 means a page crashed.</summary>
     static async Task SelfTest(MainWindow win, string outDir)
     {
@@ -78,8 +96,10 @@ public static class Program
                 win.Navigate(id);
                 await Task.Delay(id == "clean" ? 6000 : id == "fresh" ? 12000 : id is "uninstall" or "security" ? 6000 : 2200);
                 Snap(win, Path.Combine(outDir, $"{id}.png"));
+                if (L.En) foreach (var t in Arabic(win)) untranslated.Add($"[{id}] {t}");
                 Console.WriteLine("page ok: " + id);
             }
+            if (L.En) File.WriteAllText(Path.Combine(outDir, "untranslated.txt"), string.Join("\n", untranslated.Distinct()));
             // notification center + update banner screenshots
             win.Navigate("home");
             Notify.Push("ok", "تم", "تم تنظيف 1.2 GB من الملفات المؤقتة");
@@ -92,6 +112,9 @@ public static class Program
             await Task.Delay(700);
             Snap(win, Path.Combine(outDir, "notifications.png"));
             NotifyUi.Toggle(false);
+            win.ShowWelcome();
+            await Task.Delay(11000);
+            Snap(win, Path.Combine(outDir, "welcome.png"));
             win.SetOverlay(true);
             await Task.Delay(1500);
             if (win.Overlay != null) Snap(win.Overlay, Path.Combine(outDir, "overlay.png"));
@@ -183,6 +206,22 @@ public static class Program
         catch (Exception ex) { W("Proc ERR " + ex.Message); }
         W("DONE");
         return 0;
+    }
+
+    static readonly List<string> untranslated = new();
+
+    /// <summary>Texts on screen that still contain Arabic letters (used to find strings missing from the English dictionary).</summary>
+    static IEnumerable<string> Arabic(DependencyObject root)
+    {
+        var found = new List<string>();
+        void Walk(DependencyObject d)
+        {
+            if (d is System.Windows.Controls.TextBlock tb && L.HasArabicText(tb.Text)) found.Add(tb.Text.Replace("\n", " ⏎ "));
+            int n = System.Windows.Media.VisualTreeHelper.GetChildrenCount(d);
+            for (int i = 0; i < n; i++) Walk(System.Windows.Media.VisualTreeHelper.GetChild(d, i));
+        }
+        Walk(root);
+        return found;
     }
 
     static void Snap(Window w, string file)

@@ -48,7 +48,7 @@ public class TrayMenu : Window
         Content = new Border
         {
             Child = stack, Background = Ui.B("Surface2"), BorderBrush = Ui.B("BorderB"), BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(14), Padding = new Thickness(6), Margin = new Thickness(10),
+            CornerRadius = Ui.Cr(14), Padding = new Thickness(6), Margin = new Thickness(10),
             Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 24, ShadowDepth = 0, Opacity = 0.6 },
         };
         Loaded += (_, _) =>
@@ -70,7 +70,7 @@ public class TrayMenu : Window
         var ic = Ui.Icon(glyph, 15, danger ? "Bad" : "Accent2");
         Grid.SetColumn(ic, 0); Grid.SetColumn(tb, 1);
         g.Children.Add(ic); g.Children.Add(tb);
-        var b = new Border { Child = g, Padding = new Thickness(10, 9, 10, 9), CornerRadius = new CornerRadius(8), Background = Brushes.Transparent, Cursor = System.Windows.Input.Cursors.Hand };
+        var b = new Border { Child = g, Padding = new Thickness(10, 9, 10, 9), CornerRadius = Ui.Cr(8), Background = Brushes.Transparent, Cursor = System.Windows.Input.Cursors.Hand };
         b.MouseEnter += (_, _) => b.Background = Ui.Solid("#33FFFFFF");
         b.MouseLeave += (_, _) => b.Background = Brushes.Transparent;
         b.MouseLeftButtonUp += (_, _) => { try { Close(); } catch { } act(); };

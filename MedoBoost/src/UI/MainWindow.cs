@@ -17,7 +17,7 @@ public abstract class PageBase : Grid
     public virtual void OnHide() { }
 }
 
-public class MainWindow : Window
+public partial class MainWindow : Window
 {
     readonly Grid contentHost = new();
     readonly Dictionary<string, PageBase> pages = new();
@@ -36,10 +36,10 @@ public class MainWindow : Window
     {
         Instance = this;
         Title = "KHA Boost";
-        Width = 1280; Height = 800; MinWidth = 1020; MinHeight = 640;
+        Width = 1280; Height = 800; MinWidth = Ui.Prime ? 1120 : 1020; MinHeight = 640;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        FlowDirection = FlowDirection.RightToLeft;
-        FontFamily = new FontFamily("Segoe UI");
+        FlowDirection = L.Flow;
+        FontFamily = new FontFamily(Ui.Prime ? "Bahnschrift, Segoe UI" : "Segoe UI");
         Background = Ui.B("Bg");
         Foreground = Ui.B("Text");
         WindowStyle = WindowStyle.None;
@@ -49,8 +49,8 @@ public class MainWindow : Window
         try { Icon = Ui.Logo(); } catch { }
         WindowChrome.SetWindowChrome(this, new WindowChrome
         {
-            CaptionHeight = 44, ResizeBorderThickness = new Thickness(6), GlassFrameThickness = new Thickness(0),
-            CornerRadius = new CornerRadius(0), UseAeroCaptionButtons = false,
+            CaptionHeight = Ui.Prime ? 52 : 44, ResizeBorderThickness = new Thickness(6), GlassFrameThickness = new Thickness(0),
+            CornerRadius = Ui.Cr(0), UseAeroCaptionButtons = false,
         });
 
         factories["home"] = () => new DashboardPage();
@@ -70,6 +70,7 @@ public class MainWindow : Window
         Loaded += (_, _) =>
         {
             Navigate("home");
+            if (!Settings.Current.WelcomeDone && !SkipUpdateCheck) ShowWelcome();
             // FPS page listens for the benchmark hotkey, so create it up-front
             try { pages["fps"] = factories["fps"](); } catch (Exception ex) { Log.Error("FPS page: " + ex.Message); }
             if (Settings.Current.AutoUpdateCheck && !SkipUpdateCheck)
@@ -95,6 +96,7 @@ public class MainWindow : Window
         SourceInitialized += OnSourceInitialized;
         StateChanged += (_, _) => { if (Content is FrameworkElement fe) fe.Margin = WindowState == WindowState.Maximized ? new Thickness(7) : new Thickness(0); };
         Application.Current.SessionEnding += (_, _) => Quitting = true;
+        PreviewKeyDown += OnFKey;
         Closing += (_, e) =>
         {
             if (Quitting || !Settings.Current.MinimizeToTray || !Tray.Active) return;
@@ -117,6 +119,7 @@ public class MainWindow : Window
 
     UIElement Build()
     {
+        if (Ui.Prime) return BuildPrime();
         var root = new Grid();
         root.Children.Add(BackgroundFx());
 
@@ -264,11 +267,17 @@ public class MainWindow : Window
         contentHost.Children.Clear();
         contentHost.Children.Add(page);
         current = page;
-        Ui.FadeIn(page, 0, 18, 420);
+        if (Ui.Prime) Ui.ScanReveal(page, contentHost); else Ui.FadeIn(page, 0, 18, 420);
         try { page.OnShow(); } catch (Exception ex) { Log.Error($"OnShow {id}: {ex.Message}"); }
     }
 
     public IEnumerable<string> PageIds => factories.Keys;
+
+    /// <summary>The boot-up intro (first run, or "replay" from Settings).</summary>
+    public void ShowWelcome()
+    {
+        if (Content is Grid g && !g.Children.OfType<WelcomeOverlay>().Any()) g.Children.Add(new WelcomeOverlay());
+    }
 
     // ---------- Overlay + global hotkeys ----------
     public void SetOverlay(bool on)

@@ -29,7 +29,7 @@ public class SecurityPage : PageBase
         rtSwitch = Ui.Switch(true);
         rtSwitch.Checked += async (_, _) => await ToggleRealtime(true);
         rtSwitch.Unchecked += async (_, _) => await ToggleRealtime(false);
-        defDot = new Border { Width = 12, Height = 12, CornerRadius = new CornerRadius(6), Background = Ui.B("Good"), VerticalAlignment = VerticalAlignment.Center };
+        defDot = new Border { Width = 12, Height = 12, CornerRadius = Ui.Cr(6), Background = Ui.B("Good"), VerticalAlignment = VerticalAlignment.Center };
 
         var scanQuick = Ui.Btn("فحص سريع", "", () => { Security.QuickScan(); Dialogs.Toast("بدأ الفحص السريع – شوف Windows Security"); Security.OpenSecurityCenter(); }, "BtnGhost");
         var scanFull = Ui.Btn("فحص كامل", "", async () =>

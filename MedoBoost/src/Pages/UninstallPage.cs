@@ -83,7 +83,7 @@ public class UninstallPage : PageBase
         var g = Ui.Cols(new[] { "42", "*", "Auto" }, img, Ui.VStack(nameTb, subTb).M(0, 0, 14, 0), del);
         root = new Border
         {
-            Child = g, Padding = new Thickness(14, 10, 14, 10), Margin = new Thickness(0, 0, 0, 7), CornerRadius = new CornerRadius(12),
+            Child = g, Padding = new Thickness(14, 10, 14, 10), Margin = new Thickness(0, 0, 0, 7), CornerRadius = Ui.Cr(12),
             Background = Ui.B("Surface"), BorderBrush = Ui.B("BorderB"), BorderThickness = new Thickness(1),
         };
         nameTb.TextTrimming = TextTrimming.CharacterEllipsis;

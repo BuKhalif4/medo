@@ -66,7 +66,7 @@ public class StartupPage : PageBase
         var g = Ui.Cols(new[] { "44", "*", "Auto" }, icon, Ui.VStack(title, sub, cmd.M(0, 2, 0, 0)).M(0, 0, 16, 0), Ui.HStack(8, open, del, sw.M(8, 0, 0, 0)));
         root = new Border
         {
-            Child = g, Padding = new Thickness(16, 12, 16, 12), Margin = new Thickness(0, 0, 0, 8), CornerRadius = new CornerRadius(12),
+            Child = g, Padding = new Thickness(16, 12, 16, 12), Margin = new Thickness(0, 0, 0, 8), CornerRadius = Ui.Cr(12),
             Background = Ui.B("Surface"), BorderBrush = Ui.B("BorderB"), BorderThickness = new Thickness(1),
             Opacity = e.Enabled ? 1 : 0.6,
         };

@@ -25,7 +25,7 @@ public class ToolsPage : PageBase
                 try { await act(); } catch (Exception ex) { Dialogs.Toast(ex.Message, "err"); }
                 b.IsEnabled = true;
             };
-            var icon = new Border { Width = 40, Height = 40, CornerRadius = new CornerRadius(12), Background = Ui.B("AccentGrad"), Child = Ui.Icon(glyph, 18) };
+            var icon = new Border { Width = 40, Height = 40, CornerRadius = Ui.Cr(12), Background = Ui.B("AccentGrad"), Child = Ui.Icon(glyph, 18) };
             var content = new Grid();
             content.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -102,7 +102,7 @@ public class ToolsPage : PageBase
                 name.HorizontalAlignment = HorizontalAlignment.Right;
                 var line = Ui.Txt(info.Count > 0 ? string.Join("   •   ", info) : "ما في تفاصيل إضافية من القرص", 12, "TextDim", null, TextWrapping.Wrap);
                 var row = Ui.Cols(new[] { "*", "Auto" }, Ui.VStack(name, line.M(0, 3, 0, 0)), Ui.Badge(state, color, d.Bad ? "#33EF4444" : d.Warn ? "#33F59E0B" : "#3322C55E"));
-                diskList.Children.Add(new Border { Child = row, Padding = new Thickness(14, 10, 14, 10), Margin = new Thickness(0, 0, 0, 8), CornerRadius = new CornerRadius(10), Background = Ui.B("Surface2") });
+                diskList.Children.Add(new Border { Child = row, Padding = new Thickness(14, 10, 14, 10), Margin = new Thickness(0, 0, 0, 8), CornerRadius = Ui.Cr(10), Background = Ui.B("Surface2") });
             }
             diskBtn.IsEnabled = true;
         };

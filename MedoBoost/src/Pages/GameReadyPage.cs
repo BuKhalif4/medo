@@ -32,13 +32,14 @@ public class GameReadyPage : PageBase
         glow = new System.Windows.Shapes.Ellipse { Width = 150, Height = 150, Fill = Ui.B("AccentGrad"), Opacity = 0, Effect = new System.Windows.Media.Effects.BlurEffect { Radius = 30 } };
         bigBtn = new Border
         {
-            Width = 124, Height = 124, CornerRadius = new CornerRadius(62), Background = Ui.B("AccentGrad"), Cursor = System.Windows.Input.Cursors.Hand,
+            Width = 124, Height = 124, CornerRadius = Ui.Cr(62), Background = Ui.B("AccentGrad"), Cursor = System.Windows.Input.Cursors.Hand,
             Child = Ui.VStack(bigGlyph.Also(g => g.HorizontalAlignment = HorizontalAlignment.Center).M(0, 28, 0, 4), bigLabel.Also(l => l.HorizontalAlignment = HorizontalAlignment.Center)),
             RenderTransformOrigin = new Point(0.5, 0.5), RenderTransform = new ScaleTransform(1, 1),
         };
         bigBtn.MouseEnter += (_, _) => Scale(1.06);
         bigBtn.MouseLeave += (_, _) => Scale(1);
         bigBtn.MouseLeftButtonUp += async (_, _) => { bigBtn.IsEnabled = false; await GameMode.ToggleAsync(); bigBtn.IsEnabled = true; Update(); };
+        if (Ui.Prime) glow.Visibility = Visibility.Collapsed;   // no glow in the instrument design
         var bigHost = new Grid { Width = 150, Height = 150 };
         bigHost.Children.Add(glow); bigHost.Children.Add(bigBtn);
         var pulse = new DoubleAnimation(0.25, 0.7, TimeSpan.FromSeconds(1.4)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever };
@@ -141,7 +142,7 @@ public class GameReadyPage : PageBase
         if (removable) sp.Children.Add(Ui.Txt("  ✕", 12, "Bad"));
         var b = new Border
         {
-            Child = sp, Padding = new Thickness(12, 6, 12, 6), Margin = new Thickness(0, 0, 8, 8), CornerRadius = new CornerRadius(16), Cursor = System.Windows.Input.Cursors.Hand,
+            Child = sp, Padding = new Thickness(12, 6, 12, 6), Margin = new Thickness(0, 0, 8, 8), CornerRadius = Ui.Cr(16), Cursor = System.Windows.Input.Cursors.Hand,
             Background = removable ? Ui.Solid("#33EF4444") : Ui.B("Surface3"), BorderBrush = removable ? Ui.Solid("#66EF4444") : Ui.B("BorderB"), BorderThickness = new Thickness(1),
         };
         b.MouseEnter += (_, _) => b.BorderBrush = Ui.B("Accent");
