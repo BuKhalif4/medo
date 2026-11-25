@@ -12,6 +12,9 @@ local archive = {}      -- سجلات الحقائب المصادرة/المبي
 local archiveOrder = {}
 local ledger = {}       -- سجل الرشاوى (للشؤون الداخلية)
 
+-- وضع التجربة الفردية: يسمح للاعب بالقبض على نفسه حتى تجرب كل شيء وحدك (فقط في localhost)
+local SOLO = GetConvar('bagcity_solotest', 'false') == 'true'
+
 local heistById, launderById = {}, {}
 for _, h in ipairs(Config.Heists) do heistById[h.id] = h end
 for _, l in ipairs(Config.Launderers) do launderById[l.id] = l end
@@ -308,7 +311,7 @@ end
 RegisterCommand('arrest', function(src, args)
   if src == 0 or not Sec.rate(src, 'arrest', 1500) or not isCop(src) then return end
   local target = tonumber(args[1])
-  if not target or target == src or not GetPlayerName(target) or pending[target] then return end
+  if not target or (target == src and not SOLO) or not GetPlayerName(target) or pending[target] then return end
   if not Sec.between(src, target, Config.HandRange) then return say(src, 'قرّب منه أكثر.') end
   local tp = getP(target)
   if not tp.masked and not tp.bag then return say(src, 'ما عليه شبهة.') end
@@ -412,6 +415,24 @@ end, false)
 
 RegisterCommand('balance', function(src)
   if src ~= 0 and Bridge.fw == 'standalone' then say(src, 'رصيدك: ' .. Bridge.getBank(src)) end
+end, false)
+
+RegisterCommand('myid', function(src)
+  if src ~= 0 then say(src, 'رقمك: ' .. src) end
+end, false)
+
+-- انتقال سريع للتجربة: /bc_tp store1 أو /bc_tp l1
+RegisterCommand('bc_tp', function(src, args)
+  if src == 0 or not IsPlayerAceAllowed(src, 'bagcity.dev') then return end
+  local spot = heistById[args[1] or ''] or launderById[args[1] or '']
+  if not spot then
+    local ids = {}
+    for id in pairs(heistById) do ids[#ids + 1] = id end
+    for id in pairs(launderById) do ids[#ids + 1] = id end
+    table.sort(ids)
+    return say(src, 'الأماكن: ' .. table.concat(ids, ', '))
+  end
+  TriggerClientEvent('bagcity:client:tp', src, spot.coords[1], spot.coords[2], spot.coords[3] + 1.0)
 end, false)
 
 RegisterCommand('bc_here', function(src)

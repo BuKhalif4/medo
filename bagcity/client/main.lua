@@ -69,6 +69,11 @@ AddEventHandler('onResourceStop', function(res)
   SetRunSprintMultiplierForPlayer(PlayerId(), 1.0)
 end)
 
+-- ===== انتقال التجربة (السيرفر يرسله فقط لمن عنده صلاحية المطوّر) =====
+RegisterNetEvent('bagcity:client:tp', function(x, y, z)
+  SetEntityCoords(PlayerPedId(), x, y, z, false, false, false, false)
+end)
+
 -- ===== الحقائب المرمية =====
 RegisterNetEvent('bagcity:client:drops', function(list)
   local seen = {}
