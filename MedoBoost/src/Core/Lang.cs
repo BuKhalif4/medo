@@ -83,17 +83,40 @@ public static class L
         return r;
     }
 
-    /// <summary>Install the global TextBlock hook. Must run before the first TextBlock is created.</summary>
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<TextBlock, EventHandler> subs = new();
+    static readonly System.ComponentModel.DependencyPropertyDescriptor dpd = System.ComponentModel.DependencyPropertyDescriptor.FromProperty(TextBlock.TextProperty, typeof(TextBlock));
+
+    /// <summary>
+    /// Every TextBlock that appears on screen is translated when it loads, and again whenever its text changes.
+    /// (WPF can't override a property for its own owner class, so we watch each loaded TextBlock instead.)
+    /// </summary>
     public static void InstallHook()
     {
-        TextBlock.TextProperty.OverrideMetadata(typeof(TextBlock), new FrameworkPropertyMetadata(OnText));
+        EventManager.RegisterClassHandler(typeof(TextBlock), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnLoaded));
+        EventManager.RegisterClassHandler(typeof(TextBlock), FrameworkElement.UnloadedEvent, new RoutedEventHandler(OnUnloaded));
     }
 
-    static void OnText(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    static void Fix(TextBlock tb)
     {
-        if (!En || e.NewValue is not string s || s.Length == 0 || !HasArabic.IsMatch(s)) return;
+        var s = tb.Text;
+        if (string.IsNullOrEmpty(s) || !HasArabic.IsMatch(s)) return;
         var t = T(s);
-        if (!ReferenceEquals(t, s) && t != s) ((TextBlock)d).Text = t;
+        if (t != s) tb.Text = t;
+    }
+
+    static void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        if (!En || sender is not TextBlock tb) return;
+        Fix(tb);
+        if (subs.TryGetValue(tb, out _)) return;
+        EventHandler h = (_, _) => Fix(tb);
+        subs.Add(tb, h);
+        dpd.AddValueChanged(tb, h);
+    }
+
+    static void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBlock tb && subs.TryGetValue(tb, out var h)) { dpd.RemoveValueChanged(tb, h); subs.Remove(tb); }
     }
 
     /// <summary>Arabic words left in a text (used by the self-test to find untranslated strings).</summary>

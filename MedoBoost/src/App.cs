@@ -16,6 +16,20 @@ public static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        try { return Run(args); }
+        catch (Exception ex)
+        {
+            // any startup failure is written down (next to the self-test output in CI, and in the app's data folder)
+            var text = DateTime.Now + "\n" + ex;
+            try { var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MedoBoost"); Directory.CreateDirectory(dir); File.WriteAllText(Path.Combine(dir, "crash.txt"), text); } catch { }
+            try { if (args.Length > 1 && args[0].StartsWith("--")) { Directory.CreateDirectory(args[1]); File.WriteAllText(Path.Combine(args[1], "crash.txt"), text); } } catch { }
+            Console.Error.WriteLine(text);
+            return 9;
+        }
+    }
+
+    static int Run(string[] args)
+    {
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 

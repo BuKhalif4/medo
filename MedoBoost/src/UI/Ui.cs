@@ -39,7 +39,7 @@ public static class Ui
     }
 
     public static TextBlock Txt(string text, double size = 13, string brush = "Text", FontWeight? weight = null, TextWrapping wrap = TextWrapping.NoWrap)
-        => new() { Text = text, FontSize = size, Foreground = B(brush), FontWeight = weight ?? FontWeights.Normal, TextWrapping = wrap, VerticalAlignment = VerticalAlignment.Center };
+        => new() { Text = L.T(text), FontSize = size, Foreground = B(brush), FontWeight = weight ?? FontWeights.Normal, TextWrapping = wrap, VerticalAlignment = VerticalAlignment.Center };
 
     /// <summary>Numbers/units must render left-to-right inside the Arabic UI ("88%" not "%88").</summary>
     public static T Ltr<T>(this T fe) where T : FrameworkElement { fe.FlowDirection = FlowDirection.LeftToRight; return fe; }
@@ -76,12 +76,12 @@ public static class Ui
 
     public static TextBlock Title(string text, double size = 26) => new()
     {
-        Text = text, FontSize = Prime ? size + 8 : size, FontWeight = Prime ? FontWeights.Light : FontWeights.Bold, Foreground = B("Text"),
+        Text = L.T(text), FontSize = Prime ? size + 8 : size, FontWeight = Prime ? FontWeights.Light : FontWeights.Bold, Foreground = B("Text"),
     };
 
     public static TextBlock GradText(string text, double size, FontWeight? weight = null) => new()
     {
-        Text = text, FontSize = size, FontWeight = Prime ? FontWeights.Light : (weight ?? FontWeights.Bold), Foreground = Prime ? B("Text") : B("AccentGradH"), VerticalAlignment = VerticalAlignment.Center,
+        Text = L.T(text), FontSize = size, FontWeight = Prime ? FontWeights.Light : (weight ?? FontWeights.Bold), Foreground = Prime ? B("Text") : B("AccentGradH"), VerticalAlignment = VerticalAlignment.Center,
     };
 
     public static TextBlock Icon(string glyph, double size = 16, string brush = "Text") => new()
@@ -102,13 +102,13 @@ public static class Ui
         {
             Background = Brushes.Transparent, BorderBrush = B(fg), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(1), Padding = new Thickness(6, 1, 6, 2),
             Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
-            Child = new TextBlock { Text = text, FontSize = 10.5, Foreground = B(fg), FontWeight = FontWeights.Normal },
+            Child = new TextBlock { Text = L.T(text), FontSize = 10.5, Foreground = B(fg), FontWeight = FontWeights.Normal },
         }
         : new Border
         {
             Background = Solid(bgHex), CornerRadius = new CornerRadius(6), Padding = new Thickness(7, 2, 7, 3), Margin = new Thickness(6, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center,
-            Child = new TextBlock { Text = text, FontSize = 11, Foreground = B(fg), FontWeight = FontWeights.SemiBold },
+            Child = new TextBlock { Text = L.T(text), FontSize = 11, Foreground = B(fg), FontWeight = FontWeights.SemiBold },
         };
 
     public static Button Btn(string text, string glyph = null, Action onClick = null, string style = "Btn")
@@ -119,7 +119,7 @@ public static class Ui
             var ic = new TextBlock { Text = glyph, FontFamily = IconFont, FontSize = 14, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
             sp.Children.Add(ic);
         }
-        sp.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
+        sp.Children.Add(new TextBlock { Text = L.T(text), VerticalAlignment = VerticalAlignment.Center });
         var b = new Button { Content = sp, Style = S(style) };
         if (onClick != null) b.Click += (_, _) => onClick();
         return b;

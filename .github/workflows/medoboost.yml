@@ -30,6 +30,7 @@ jobs:
           $p = Start-Process -FilePath 'out\KHABoost.exe' -ArgumentList '--selftest', "`"$shots`"" -PassThru
           if (-not $p.WaitForExit(180000)) { $p.Kill(); Write-Error 'self-test timed out' }
           Write-Host "exit code: $($p.ExitCode)"
+          if (Test-Path "$shots\crash.txt") { Get-Content "$shots\crash.txt" }
           Get-ChildItem $shots | Format-Table Name, Length
           if (Test-Path "$shots\error.txt") { Get-Content "$shots\error.txt" }
           if (Test-Path "$shots\log.txt") { Get-Content "$shots\log.txt" }
