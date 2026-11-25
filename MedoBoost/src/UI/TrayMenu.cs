@@ -63,7 +63,7 @@ public class TrayMenu : Window
 
     UIElement Row(string glyph, string text, Action act, bool danger = false)
     {
-        var tb = new TextBlock { Text = text, FontSize = 13.5, Foreground = Ui.B(danger ? "Bad" : "Text"), VerticalAlignment = VerticalAlignment.Center };
+        var tb = new TextBlock { Text = L.T(text), FontSize = 13.5, Foreground = Ui.B(danger ? "Bad" : "Text"), VerticalAlignment = VerticalAlignment.Center };
         var g = new Grid();
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30) });
         g.ColumnDefinitions.Add(new ColumnDefinition());

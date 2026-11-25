@@ -100,7 +100,8 @@ public class RingGauge : FrameworkElement
         dc.DrawText(lt, new Point(c.X - lt.Width / 2, c.Y + vt.Height / 2 - size * 0.02));
         if (!string.IsNullOrEmpty(SubText))
         {
-            var st = new FormattedText(SubText, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, DialLbl, size * 0.075, new SolidColorBrush(Color.FromRgb(0xFF, 0x5B, 0x2E)), dpi);
+            bool rtl = SubText.Any(ch => ch >= '\u0600' && ch <= '\u06FF');
+            var st = new FormattedText(SubText, CultureInfo.InvariantCulture, rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight, DialLbl, size * 0.075, new SolidColorBrush(Color.FromRgb(0xFF, 0x5B, 0x2E)), dpi);
             dc.DrawText(st, new Point(c.X - st.Width / 2, c.Y + R * 0.74));
         }
     }

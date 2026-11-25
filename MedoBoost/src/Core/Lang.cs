@@ -32,7 +32,7 @@ public static class L
         ("جاري إعادة تشغيل البرنامج...", "Restarting the app..."),
         ("جهّز للعب (Ctrl+Shift+G)", "Game Ready (Ctrl+Shift+G)"),
         ("نقطة الاستعادة جاهزة", "Restore point is ready"),
-        ("أنوية", "cores"), ("مسار", "threads"),
+        ("أنوية", "cores"), ("مسار", "threads"), ("منافذ", "slots"), ("من", "of"), ("تعريف", "driver"), ("مستخدم", "used"), ("متاح", "free"),
     };
 
     static void Build()
@@ -77,47 +77,37 @@ public static class L
         }
         var r = s;
         foreach (var (ar, en) in frags) if (r.Contains(ar)) r = r.Replace(ar, en);
+        r = Regex.Replace(r, @"^إيقاف ", "Disable ");
+        r = Regex.Replace(r, @"^القرص ", "Drive ");
+        r = Regex.Replace(r, @"\bمن\b", "of");
         r = Regex.Replace(r, @"(\d) أنوية", "$1 cores");
         r = Regex.Replace(r, @"(\d) مسار", "$1 threads");
         r = Regex.Replace(r, @"تعريف (?=\d)", "Driver ");
         return r;
     }
 
-    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<TextBlock, EventHandler> subs = new();
-    static readonly System.ComponentModel.DependencyPropertyDescriptor dpd = System.ComponentModel.DependencyPropertyDescriptor.FromProperty(TextBlock.TextProperty, typeof(TextBlock));
-
     /// <summary>
-    /// Every TextBlock that appears on screen is translated when it loads, and again whenever its text changes.
-    /// (WPF can't override a property for its own owner class, so we watch each loaded TextBlock instead.)
+    /// Translates everything currently on screen: TextBlocks (including the ones WPF creates inside buttons), tooltips and
+    /// context-menu items. Called a few times per second in English mode, so text set later by code is covered too.
     /// </summary>
-    public static void InstallHook()
+    public static void Sweep(DependencyObject root)
     {
-        EventManager.RegisterClassHandler(typeof(TextBlock), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnLoaded));
-        EventManager.RegisterClassHandler(typeof(TextBlock), FrameworkElement.UnloadedEvent, new RoutedEventHandler(OnUnloaded));
+        if (!En || root == null) return;
+        void Walk(DependencyObject d)
+        {
+            if (d is TextBlock tb) { var s = tb.Text; if (!string.IsNullOrEmpty(s) && HasArabic.IsMatch(s)) { var t = T(s); if (t != s) tb.Text = t; } }
+            if (d is FrameworkElement fe)
+            {
+                if (fe.ToolTip is string tip && HasArabic.IsMatch(tip)) fe.ToolTip = T(tip);
+                if (fe.ContextMenu != null) foreach (var it in fe.ContextMenu.Items) if (it is MenuItem mi && mi.Header is string h && HasArabic.IsMatch(h)) mi.Header = T(h);
+            }
+            int n = System.Windows.Media.VisualTreeHelper.GetChildrenCount(d);
+            for (int i = 0; i < n; i++) Walk(System.Windows.Media.VisualTreeHelper.GetChild(d, i));
+        }
+        Walk(root);
     }
 
-    static void Fix(TextBlock tb)
-    {
-        var s = tb.Text;
-        if (string.IsNullOrEmpty(s) || !HasArabic.IsMatch(s)) return;
-        var t = T(s);
-        if (t != s) tb.Text = t;
-    }
-
-    static void OnLoaded(object sender, RoutedEventArgs e)
-    {
-        if (!En || sender is not TextBlock tb) return;
-        Fix(tb);
-        if (subs.TryGetValue(tb, out _)) return;
-        EventHandler h = (_, _) => Fix(tb);
-        subs.Add(tb, h);
-        dpd.AddValueChanged(tb, h);
-    }
-
-    static void OnUnloaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is TextBlock tb && subs.TryGetValue(tb, out var h)) { dpd.RemoveValueChanged(tb, h); subs.Remove(tb); }
-    }
+    public static void InstallHook() { }   // (kept so callers stay valid; the sweep is driven by the main window)
 
     /// <summary>Arabic words left in a text (used by the self-test to find untranslated strings).</summary>
     public static bool HasArabicText(string s) => !string.IsNullOrEmpty(s) && HasArabic.IsMatch(s);

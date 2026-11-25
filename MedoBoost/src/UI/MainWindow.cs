@@ -97,6 +97,13 @@ public partial class MainWindow : Window
         StateChanged += (_, _) => { if (Content is FrameworkElement fe) fe.Margin = WindowState == WindowState.Maximized ? new Thickness(7) : new Thickness(0); };
         Application.Current.SessionEnding += (_, _) => Quitting = true;
         PreviewKeyDown += OnFKey;
+        if (L.En)
+        {
+            var sweep = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+            sweep.Tick += (_, _) => L.Sweep(this);
+            sweep.Start();
+            ContentRendered += (_, _) => L.Sweep(this);
+        }
         Closing += (_, e) =>
         {
             if (Quitting || !Settings.Current.MinimizeToTray || !Tray.Active) return;
@@ -277,7 +284,13 @@ public partial class MainWindow : Window
     /// <summary>The boot-up intro (first run, or "replay" from Settings).</summary>
     public void ShowWelcome()
     {
-        if (Content is Grid g && !g.Children.OfType<WelcomeOverlay>().Any()) g.Children.Add(new WelcomeOverlay());
+        if (Content is Grid g && !g.Children.OfType<WelcomeOverlay>().Any())
+        {
+            var o = new WelcomeOverlay();
+            Grid.SetRowSpan(o, Math.Max(1, g.RowDefinitions.Count));
+            Grid.SetColumnSpan(o, Math.Max(1, g.ColumnDefinitions.Count));
+            g.Children.Add(o);
+        }
     }
 
     // ---------- Overlay + global hotkeys ----------

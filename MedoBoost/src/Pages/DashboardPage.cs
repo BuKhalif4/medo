@@ -174,6 +174,8 @@ public class DashboardPage : PageBase
     static void Mixed(WrapPanel host, string text)
     {
         host.Children.Clear();
+        text = L.T(text);
+        if (L.En) { host.Children.Add(Ui.Txt(text, 11.5, "TextDim")); return; }
         int i = 0;
         while (i < text.Length)
         {
