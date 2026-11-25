@@ -44,7 +44,34 @@ Config.HeadlineMax    = 80      -- أقصى طول للعنوان
 Config.PressHeat      = 10      -- النشر يرفع حرارة الحقيبة (الإعلام ينفخ القصة)
 Config.PressRewardMax = 5000    -- سقف مكافأة الخبر الواحد
 
--- ===== المحلات (غيّر الإحداثيات بأمر /bc_here) =====
+-- ===== حدود المدينة (بدل الخريطة الكاملة) =====
+-- اللاعب خارج الدائرة يتحذّر، وبعد warnSeconds ثانية يرجع تلقائياً لنقطة safe
+Config.Zone = {
+  center = {-50.0, -800.0, 30.0},
+  radius = 1450.0,
+  warnSeconds = 12,
+  safe = {441.2, -975.0, 30.7},   -- مركز الشرطة
+}
+
+-- ===== المخابئ (بيوت ومقرات العصابات) =====
+Config.Stash = {
+  coolPerMinute = 1,    -- كم تبرد حرارة الحقيبة المخبأة كل دقيقة (تضرب في cool المكان)
+  raidTime      = 20,   -- ثواني مداهمة الشرطة
+  raidCooldown  = 600,  -- ثواني قبل ما ينداهم نفس المكان مرة ثانية
+}
+Config.DutyAtHQ = true  -- دخول الخدمة (وضع التجربة) يحتاج تكون عند مركز الشرطة
+
+-- ===== الأماكن (أقرب شيء لنظام ROB RUN: مركز شرطة + مقرات + بيوت) =====
+-- type: police | gang | house. الإحداثيات تقريبية: انتقل بالقائمة (أدوات) وعدّلها
+Config.Places = {
+  { id = 'hq',     type = 'police', label = 'مركز الشرطة',         tag = 'Police HQ',    coords = {441.2, -981.9, 30.7},    radius = 4.0 },
+  { id = 'gang1',  type = 'gang',   label = 'مقر عصابة الجروف',    tag = 'Gang hideout', coords = {-14.7, -1441.8, 31.1},   radius = 3.5, cool = 2 },
+  { id = 'gang2',  type = 'gang',   label = 'مقر عصابة الفورم',    tag = 'Gang hideout', coords = {86.0, -1927.0, 20.8},    radius = 3.5, cool = 2 },
+  { id = 'house1', type = 'house',  label = 'بيت آمن - الشاطئ',    tag = 'Safehouse',    coords = {-1150.0, -1521.0, 10.6}, radius = 3.0, cool = 1 },
+  { id = 'house2', type = 'house',  label = 'بيت آمن - وسط المدينة', tag = 'Safehouse',  coords = {-47.3, -584.0, 38.2},    radius = 3.0, cool = 1 },
+}
+
+-- ===== المحلات (غيّر الإحداثيات من قائمة الأدوات) =====
 -- loot = {أقل, أعلى}, heat = كم ترتفع حرارة الحي والحقيبة, duration/cooldown بالثواني
 Config.Heists = {
   { id = 'jewel',  label = 'محل مجوهرات',   tag = 'Jewelry heist',  coords = {-622.5, -230.9, 38.1},  radius = 6.0, duration = 25, cooldown = 1800, loot = {15000, 40000}, heat = 35, district = 'vinewood' },

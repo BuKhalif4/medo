@@ -1,7 +1,7 @@
 -- طبقة الحماية: كل شيء يمر من هنا. السيرفر هو الحاكم دائماً.
 Sec = {}
 
-local buckets, strikes = {}, {}
+local buckets, strikes, strikeAt = {}, {}, {}
 
 function Sec.log(msg)
   print(('^3[bagcity]^7 %s'):format(msg))
@@ -23,14 +23,18 @@ end
 
 -- مخالفة: تتراكم ثم تطرد
 function Sec.strike(src, reason)
-  strikes[src] = (strikes[src] or 0) + 1
+  -- مخالفة واحدة تنمسح كل 5 دقائق، حتى ما ينطرد لاعب سليم بسبب لاق متفرق
+  local now = GetGameTimer()
+  local n = strikes[src] or 0
+  if n > 0 then n = math.max(0, n - math.floor((now - (strikeAt[src] or now)) / 300000)) end
+  strikes[src], strikeAt[src] = n + 1, now
   Sec.log(('مخالفة %d/%d من %s (%s): %s'):format(strikes[src], Config.MaxStrikes, GetPlayerName(src) or '?', src, reason))
   if strikes[src] >= Config.MaxStrikes then
     DropPlayer(src, 'Kicked by server protection.')
   end
 end
 
-function Sec.clear(src) buckets[src] = nil; strikes[src] = nil end
+function Sec.clear(src) buckets[src] = nil; strikes[src] = nil; strikeAt[src] = nil end
 
 function Sec.dist(a, b)
   local dx, dy, dz = a[1] - b[1], a[2] - b[2], a[3] - b[3]

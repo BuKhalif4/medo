@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>Bag City</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- شريط الحالة -->
+  <div id="hud" class="hud" hidden></div>
+
+  <!-- رسائل -->
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <div id="banner" class="banner" hidden><b></b><span></span></div>
+  <div id="zone" class="zone" hidden></div>
+  <div id="prompt" class="prompt" hidden></div>
+  <div id="progress" class="progress" hidden><span></span><div class="track"><i></i></div></div>
+
+  <!-- القائمة الدائرية -->
+  <main id="menu" class="menu" hidden>
+    <nav id="tabs" class="tabs" aria-label="التصنيفات"></nav>
+    <section id="wheel" class="wheel" aria-label="القائمة">
+      <div class="center">
+        <svg viewBox="0 0 64 64" class="logo" aria-hidden="true">
+          <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb02e"/><stop offset="1" stop-color="#ff5d7a"/></linearGradient></defs>
+          <path d="M22 20c0-6 4-10 10-10s10 4 10 10" fill="none" stroke="url(#lg)" stroke-width="4" stroke-linecap="round"/>
+          <path d="M14 22h36l4 30a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4z" fill="url(#lg)"/>
+          <path d="M24 36h16M24 44h10" stroke="#10131a" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <strong>مدينة الحقيبة</strong>
+        <small id="centerHint">اختر من القائمة</small>
+      </div>
+      <div id="ring"></div>
+    </section>
+    <footer class="title"><span id="titleIcon" aria-hidden="true"></span><h1 id="title">قائمة المواطنين</h1></footer>
+    <p class="keys">Esc إغلاق · الأرقام 1-9 اختيار سريع</p>
+  </main>
+
+  <!-- نوافذ -->
+  <div id="modal" class="modal" hidden>
+    <form id="modalForm">
+      <h2 id="modalTitle"></h2>
+      <input id="modalInput" type="text" autocomplete="off" maxlength="80">
+      <div class="row"><button type="submit" class="ok">إرسال</button><button type="button" id="modalCancel">إلغاء</button></div>
+    </form>
+  </div>
+  <div id="doc" class="modal" hidden>
+    <article>
+      <h2 id="docTitle"></h2>
+      <ul id="docLines"></ul>
+      <div class="row"><button type="button" id="docClose" class="ok">إغلاق</button></div>
+    </article>
+  </div>
+<script src="app.js"></script>
+</body>
+</html>
