@@ -36,6 +36,43 @@
     <p class="keys">Esc إغلاق · الأرقام 1-9 اختيار سريع</p>
   </main>
 
+
+  <!-- السوق السوداء / الشحنات -->
+  <section id="market" class="panel" hidden>
+    <header class="pn-head">
+      <h1>السوق السوداء</h1>
+      <nav id="mkTabs" class="mk-tabs" aria-label="الأقسام"></nav>
+      <div class="wallet"><span>كاش</span><b id="mkCash">0</b></div>
+      <button class="pn-close" id="mkClose" type="button" aria-label="إغلاق">✖</button>
+    </header>
+    <div class="pn-body">
+      <div id="mkMain" class="mk-main"></div>
+      <aside id="mkSide" class="mk-side"></aside>
+    </div>
+    <footer class="pn-foot">Esc إغلاق · اضغط البطاقة للشراء والتجهيز · الدرجات الأعلى تُفتح من «الشحنات»</footer>
+  </section>
+
+  <!-- اختيار معدات الشرطة -->
+  <section id="ranks" class="panel" hidden>
+    <header class="pn-head">
+      <h1>اختيار المعدات</h1>
+      <p class="pn-sub" id="rkSub"></p>
+      <button class="pn-close" id="rkClose" type="button" aria-label="إغلاق">✖</button>
+    </header>
+    <div class="pn-body"><div id="rkCards" class="rk-cards"></div></div>
+    <footer class="pn-foot">الرتب العليا تحتاج نقاط: كل قبض ومصادرة ومداهمة ناجحة تزيدها</footer>
+  </section>
+
+  <!-- شراء الذخيرة -->
+  <div id="ammoModal" class="modal" hidden>
+    <form id="ammoForm">
+      <h2 id="ammoTitle"></h2>
+      <div class="ammo-row"><span>1</span><input id="ammoRange" type="range" min="1" max="360" value="60"><span id="ammoQty">60</span></div>
+      <p class="ammo-price">السعر: <b id="ammoPrice">0</b></p>
+      <div class="row"><button type="submit" class="ok">شراء</button><button type="button" id="ammoCancel">إلغاء</button></div>
+    </form>
+  </div>
+
   <!-- نوافذ -->
   <div id="modal" class="modal" hidden>
     <form id="modalForm">

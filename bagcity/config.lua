@@ -106,22 +106,57 @@ Config.Honeypots = {
 -- limitSeconds = أقل مدة بين شراءين (للقاذف). mods = تعديلات (price)
 -- أسماء التعديلات (COMPONENT_*) ممكن يكون فيها خطأ بسيط، لو ما اشتغل تعديل قل لي.
 Config.Weapons = {
-  { id = 'pistol',  label = 'مسدس',        weapon = 'WEAPON_PISTOL',        price = 2500,   ammo = 48,
+  { id = 'pistol', slot = 'secondary', tier = 1, node = nil,  label = 'مسدس',        weapon = 'WEAPON_PISTOL',        price = 2500,   ammo = 48,
     mods = { { id = 'supp', label = 'كاتم صوت', comp = 'COMPONENT_AT_PI_SUPP_02', price = 3500 }, { id = 'clip', label = 'مخزن موسّع', comp = 'COMPONENT_PISTOL_CLIP_02', price = 2500 } } },
-  { id = 'smg',     label = 'رشاش صغير',   weapon = 'WEAPON_MICROSMG',      price = 18000,  ammo = 90,
+  { id = 'smg', slot = 'primary', tier = 2, node = 'w_smg',     label = 'رشاش صغير',   weapon = 'WEAPON_MICROSMG',      price = 18000,  ammo = 90,
     mods = { { id = 'clip', label = 'مخزن موسّع', comp = 'COMPONENT_MICROSMG_CLIP_02', price = 4000 }, { id = 'scope', label = 'منظار', comp = 'COMPONENT_AT_SCOPE_MACRO', price = 3000 } } },
-  { id = 'shotgun', label = 'بامب أكشن',    weapon = 'WEAPON_PUMPSHOTGUN',   price = 22000,  ammo = 24,
+  { id = 'shotgun', slot = 'primary', tier = 2, node = 'w_shotgun', label = 'بامب أكشن',    weapon = 'WEAPON_PUMPSHOTGUN',   price = 22000,  ammo = 24,
     mods = { { id = 'supp', label = 'كاتم صوت', comp = 'COMPONENT_AT_SR_SUPP', price = 5000 } } },
-  { id = 'rifle',   label = 'بندقية',       weapon = 'WEAPON_CARBINERIFLE',  price = 45000,  ammo = 120,
+  { id = 'rifle', slot = 'primary', tier = 3, node = 'w_rifle',   label = 'بندقية',       weapon = 'WEAPON_CARBINERIFLE',  price = 45000,  ammo = 120,
     mods = { { id = 'clip', label = 'مخزن موسّع', comp = 'COMPONENT_CARBINERIFLE_CLIP_02', price = 6000 }, { id = 'grip', label = 'مقبض', comp = 'COMPONENT_AT_AR_AFGRIP', price = 3500 }, { id = 'scope', label = 'منظار', comp = 'COMPONENT_AT_SCOPE_MEDIUM', price = 5000 } } },
-  { id = 'rpg',     label = 'قاذف قنابل',   weapon = 'WEAPON_RPG',           price = 180000, ammo = 2, limitSeconds = 1800, mods = {} },
+  { id = 'rpg', slot = 'primary', tier = 3, node = 'w_rpg',     label = 'قاذف قنابل',   weapon = 'WEAPON_RPG',           price = 180000, ammo = 2, limitSeconds = 1800, mods = {} },
 }
 Config.ArmorPrice   = 3000
 Config.RefillRate   = 0.30
-Config.PoliceKit = {    -- مجاني لمن هو في الخدمة عند مركز الشرطة (مرة كل 5 دقائق)
-  { weapon = 'WEAPON_COMBATPISTOL', ammo = 120 },
-  { weapon = 'WEAPON_CARBINERIFLE', ammo = 150 },
-  { weapon = 'WEAPON_STUNGUN',      ammo = 1 },
-  { weapon = 'WEAPON_NIGHTSTICK',   ammo = 1 },
+
+-- ===== السوق السوداء: المعدات (الدروع والحقائب) =====
+-- tier = درجة البطاقة (1 أخضر، 2 بنفسجي، 3 ذهبي). node = عقدة الشحنات اللي لازم تفتحها أول (nil = متاح).
+-- capacity = أقصى قيمة غنائم تحملها الحقيبة المسروقة. squares = خانات شبكة الحقيبة.
+Config.BaseCapacity = 60000     -- السعة بدون حقيبة مجهّزة
+Config.BaseSquares  = 18
+Config.Gear = {
+  { id = 'vest_light',    cat = 'armor', label = 'سترة خفيفة',    price = 4000,   tier = 1, armor = 40 },
+  { id = 'vest_plate',    cat = 'armor', label = 'حامل لوحات',    price = 15000,  tier = 1, armor = 70 },
+  { id = 'vest_tac',      cat = 'armor', label = 'سترة تكتيكية',  price = 70000,  tier = 2, armor = 100, node = 'e_vest' },
+  { id = 'vest_heavy',    cat = 'armor', label = 'سترة ثقيلة',    price = 140000, tier = 3, armor = 100, node = 'e_heavy' },
+  { id = 'bag_pouch',     cat = 'bag',   label = 'كيس صغير',      price = 5000,   tier = 1, capacity = 100000, squares = 6 },
+  { id = 'bag_satchel',   cat = 'bag',   label = 'حقيبة كتف',     price = 10000,  tier = 1, capacity = 150000, squares = 12 },
+  { id = 'bag_duffle',    cat = 'bag',   label = 'حقيبة رياضية',  price = 15000,  tier = 2, capacity = 250000, squares = 24, node = 'e_duffle' },
+  { id = 'bag_backpack',  cat = 'bag',   label = 'حقيبة ظهر',     price = 40000,  tier = 3, capacity = 400000, squares = 36, node = 'e_pack' },
 }
-Config.PoliceKitCooldown = 300
+
+-- ===== الشحنات: شجرة التقدم (تفتح الدرجات الأعلى). root = مفتوحة من البداية =====
+-- col/row = مكان العقدة في الشجرة. cost = كاش. requires = لازم تكون مفتوحة قبلها
+Config.Tree = {
+  { id = 'w_root',    branch = 'weapons',   label = 'المسدسات',        col = 0, row = 0, root = true },
+  { id = 'w_smg',     branch = 'weapons',   label = 'رشاشات صغيرة',    col = 1, row = 0, cost = 20000,  requires = { 'w_root' } },
+  { id = 'w_shotgun', branch = 'weapons',   label = 'بنادق بامب',      col = 1, row = 1, cost = 30000,  requires = { 'w_root' } },
+  { id = 'w_rifle',   branch = 'weapons',   label = 'بنادق هجومية',    col = 2, row = 0, cost = 70000,  requires = { 'w_smg' } },
+  { id = 'w_rpg',     branch = 'weapons',   label = 'قاذف القنابل',    col = 3, row = 0, cost = 250000, requires = { 'w_rifle', 'w_shotgun' } },
+  { id = 'e_root',    branch = 'equipment', label = 'المعدات الأساسية', col = 0, row = 3, root = true },
+  { id = 'e_vest',    branch = 'equipment', label = 'سترات تكتيكية',   col = 1, row = 3, cost = 40000,  requires = { 'e_root' } },
+  { id = 'e_duffle',  branch = 'equipment', label = 'حقائب رياضية',    col = 1, row = 4, cost = 30000,  requires = { 'e_root' } },
+  { id = 'e_heavy',   branch = 'equipment', label = 'سترات ثقيلة',     col = 2, row = 3, cost = 100000, requires = { 'e_vest' } },
+  { id = 'e_pack',    branch = 'equipment', label = 'حقائب ظهر',       col = 2, row = 4, cost = 80000,  requires = { 'e_duffle' } },
+}
+
+-- ===== رتب الشرطة (تتقدم بنقاط: قبض، مداهمة، مصادرة) =====
+Config.PoliceRanks = {
+  { id = 'patrol', label = 'ضابط دورية', xp = 0,   armor = 50,  kit = { { weapon = 'WEAPON_COMBATPISTOL', ammo = 120, label = 'مسدس قتالي' }, { weapon = 'WEAPON_STUNGUN', ammo = 1, label = 'صاعق' }, { weapon = 'WEAPON_NIGHTSTICK', ammo = 1, label = 'هراوة' } } },
+  { id = 'sgt1',   label = 'رقيب أول',   xp = 10,  armor = 75,  kit = { { weapon = 'WEAPON_COMBATPISTOL', ammo = 120, label = 'مسدس قتالي' }, { weapon = 'WEAPON_PUMPSHOTGUN', ammo = 40, label = 'بامب أكشن' }, { weapon = 'WEAPON_STUNGUN', ammo = 1, label = 'صاعق' } } },
+  { id = 'sgt2',   label = 'رقيب ثان',   xp = 25,  armor = 100, kit = { { weapon = 'WEAPON_COMBATPISTOL', ammo = 120, label = 'مسدس قتالي' }, { weapon = 'WEAPON_CARBINERIFLE', ammo = 120, label = 'بندقية' }, { weapon = 'WEAPON_STUNGUN', ammo = 1, label = 'صاعق' } } },
+  { id = 'lt',     label = 'ملازم',      xp = 50,  armor = 100, kit = { { weapon = 'WEAPON_PISTOL50', ammo = 100, label = 'مسدس ثقيل' }, { weapon = 'WEAPON_SMG', ammo = 150, label = 'رشاش' }, { weapon = 'WEAPON_STUNGUN', ammo = 1, label = 'صاعق' } } },
+  { id = 'cpt',    label = 'نقيب',       xp = 100, armor = 100, kit = { { weapon = 'WEAPON_PISTOL50', ammo = 100, label = 'مسدس ثقيل' }, { weapon = 'WEAPON_CARBINERIFLE_MK2', ammo = 180, label = 'بندقية متطورة' }, { weapon = 'WEAPON_STUNGUN', ammo = 1, label = 'صاعق' } } },
+}
+Config.RankKitCooldown = 60   -- ثواني بين استلام معدات وأخرى
+Config.XP = { arrest = 1, seize = 2, raid = 3 }   -- نقاط الشرطي لكل إجراء ناجح

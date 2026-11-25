@@ -8,7 +8,6 @@ local drops, dropObjs = {}, {}
 local lastPrompt, lastDeath = '', 0
 local overrides = {}                 -- نقاط حددها المطوّر (من السيرفر)
 local blips = {}
-local nearInfo = { bench = false, armory = false }
 
 local function nui(t) SendNUIMessage(t) end
 
@@ -68,7 +67,7 @@ RegisterNetEvent('bagcity:client:state', function(s)
   local wasMasked = S.masked
   S = s
   hasBag = s.bag ~= nil
-  bagWeight = hasBag and math.min(1.0, s.bag.value / Config.MaxBagValue) or 0.0
+  bagWeight = hasBag and math.min(1.0, s.bag.value / (s.cap or Config.BaseCapacity)) or 0.0
   if s.masked ~= (wasMasked or false) then applyMask(s.masked) end
   syncBag()
   nui({ type = 'state', state = s })
@@ -322,36 +321,32 @@ local function placesForMenu()
   return list
 end
 
-local function gearForMenu()
-  local list = {}
+local function catalogForMenu()
+  local weapons = {}
   for _, w in ipairs(Config.Weapons) do
     local m = {}
-    for _, x in ipairs(w.mods) do m[#m + 1] = { id = x.id, label = x.label, price = x.price } end
-    list[#list + 1] = { id = w.id, label = w.label, price = w.price, ammo = w.ammo, refill = math.floor(w.price * Config.RefillRate), mods = m }
+    for _, x in ipairs(w.mods or {}) do m[#m + 1] = { id = x.id, label = x.label, price = x.price } end
+    weapons[#weapons + 1] = { id = w.id, cat = 'weapon', slot = w.slot, tier = w.tier, node = w.node, label = w.label, price = w.price, ammo = w.ammo, mods = m }
   end
-  return { weapons = list, armor = Config.ArmorPrice }
+  local gear = {}
+  for _, g in ipairs(Config.Gear) do
+    gear[#gear + 1] = { id = g.id, cat = g.cat, tier = g.tier, node = g.node, label = g.label, price = g.price, armor = g.armor, capacity = g.capacity, squares = g.squares }
+  end
+  local ranks = {}
+  for _, r in ipairs(Config.PoliceRanks) do
+    local kit = {}
+    for _, k in ipairs(r.kit) do kit[#kit + 1] = { label = k.label } end
+    ranks[#ranks + 1] = { id = r.id, label = r.label, xp = r.xp, armor = r.armor, kit = kit }
+  end
+  return { weapons = weapons, gear = gear, tree = Config.Tree, ranks = ranks,
+    base = { capacity = Config.BaseCapacity, squares = Config.BaseSquares }, refill = Config.RefillRate }
 end
 
-local function computeNear()
-  local pos = GetEntityCoords(PlayerPedId())
-  local bench, armory = false, false
-  for _, p in ipairs(Config.Places) do
-    if p.type == 'gang' then
-      local b = pt(p, 'bench')
-      if b and #(pos - b) <= 4.0 then bench = true end
-    elseif p.type == 'police' and #(pos - pt(p, 'main')) <= p.radius + 3.0 then
-      armory = true
-    end
-  end
-  return { bench = bench, armory = armory }
-end
-
-local function openMenu(tab)
+local function openMenu(tab, panel)
   if menuOpen or working then return end
   menuOpen = true
   SetNuiFocus(true, true)
-  nearInfo = computeNear()
-  nui({ type = 'open', tab = tab or 'citizen', nearby = nearbyPlayers(), places = placesForMenu(), gear = gearForMenu(), near = nearInfo,
+  nui({ type = 'open', tab = tab or 'citizen', panel = panel, nearby = nearbyPlayers(), places = placesForMenu(), catalog = catalogForMenu(),
     bribe = { min = Config.BribeMin, max = Config.BribeMax }, state = S })
   TriggerServerEvent('bagcity:server:state')
   CreateThread(function()
@@ -448,6 +443,10 @@ CreateThread(function()
             if S.copAllowed then
               lines[#lines + 1] = 'E — دخول / خروج الخدمة'
               onE = function() TriggerServerEvent('bagcity:server:action', 'duty', {}) end
+              if S.cop then
+                lines[#lines + 1] = 'H — اختيار المعدات (رتبتك)'
+                onH = function() openMenu(nil, 'ranks') end
+              end
             end
           elseif S.cop then
             lines[#lines + 1] = 'G — اقتحام الباب (' .. p.label .. ')'
@@ -461,8 +460,8 @@ CreateThread(function()
         end
         -- طاولة الأدوات
         if p.type == 'gang' and near(pt(p, 'bench'), 2.0) then
-          lines[#lines + 1] = 'H — طاولة الأدوات (أسلحة وتعديل وتعبئة)'
-          onH = function() openMenu('bench') end
+          lines[#lines + 1] = 'H — السوق السوداء (أسلحة ومعدات وشحنات)'
+          onH = function() openMenu(nil, 'market') end
         end
       end
       if not hasBag then

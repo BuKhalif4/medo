@@ -27,8 +27,8 @@ let st = {};            // حالة اللاعب من السيرفر
 let nearby = [];        // لاعبون قريبون
 let places = [];        // أماكن (من الإعدادات)
 let bribe = { min: 5000, max: 200000 };
-let gear = { weapons: [], armor: 0 };
-let near = { bench: false, armory: false };
+let catalog = { weapons: [], gear: [], tree: [], ranks: [], base: {}, refill: 0.3 };
+let panel = null;       // market | ranks
 let tab = 'citizen';
 let picker = null;      // { title, items }
 let menuOpen = false;
@@ -44,7 +44,6 @@ const TABS = [
   { id: 'chase', icon: '🚨', title: 'القبض عليك', show: () => !!st.arrested },
   { id: 'police', icon: '🛡️', title: 'قائمة الشرطة', show: () => st.copAllowed || st.cop },
   { id: 'press', icon: '📰', title: 'قائمة الصحافة', show: () => st.pressAllowed || st.press },
-  { id: 'bench', icon: '🔧', title: 'طاولة الأدوات', show: () => near.bench },
   { id: 'tools', icon: '⚙️', title: 'أدوات التجربة', show: () => st.dev || st.ia },
 ];
 
@@ -69,37 +68,6 @@ function placesPicker(title, kindFilter, onPick) {
     picker = { title, items };
     render();
   };
-}
-
-const hasGun = (id) => (st.guns || []).includes(id);
-
-function weaponsPicker() {
-  const items = gear.weapons.map((w) => ({
-    icon: '🔫', label: w.label, hint: `${money(w.price)} كاش · ذخيرة ${w.ammo}`,
-    disabled: (st.cash || 0) < w.price, run: () => { act('buyweapon', [w.id]); picker = null; render(); },
-  }));
-  picker = { title: 'اختر السلاح', items };
-  render();
-}
-
-function ownedPicker(title, build) {
-  return () => {
-    const items = gear.weapons.filter((w) => hasGun(w.id)).map(build);
-    if (!items.length) items.push({ icon: '🚫', label: 'ما تملك أسلحة', hint: 'اشترِ سلاحاً أول', disabled: true });
-    picker = { title, items };
-    render();
-  };
-}
-
-function modPicker(w) {
-  const done = (st.mods && st.mods[w.id]) || {};
-  const items = w.mods.map((m) => ({
-    icon: '🔧', label: m.label, hint: done[m.id] ? 'مركّب' : `${money(m.price)} كاش`,
-    disabled: !!done[m.id] || (st.cash || 0) < m.price, run: () => { act('buymod', [w.id, m.id]); picker = null; render(); },
-  }));
-  if (!items.length) items.push({ icon: '🚫', label: 'ما فيه تعديلات', hint: '', disabled: true });
-  picker = { title: `تعديل ${w.label}`, items };
-  render();
 }
 
 // يختار النوع (الباب / داخل الغرفة / الطاولة) للأماكن، أو ينفّذ مباشرة لغيرها
@@ -145,7 +113,7 @@ function itemsFor(id) {
       { icon: '🛡️', label: st.cop ? 'خروج من الخدمة' : 'دخول الخدمة', hint: 'عند مركز الشرطة', disabled: !st.copAllowed, run: () => act('duty') },
       { icon: '🚔', label: 'قبض', hint: 'على لاعب قريب (ملثم أو معه حقيبة)', disabled: !st.cop, run: nearbyPicker('اختر من تقبض عليه', 'arrest') },
       { icon: '🔍', label: 'فحص أثر الفلوس', hint: 'يكشف رقم حقيبة بُيّضت مؤخراً', disabled: !st.cop, run: nearbyPicker('اختر من تفحصه', 'scan') },
-      { icon: '🔫', label: 'استلام المعدات', hint: 'مجاناً من مركز الشرطة (كل ٥ دقائق)', disabled: !st.cop || !near.armory, run: () => act('policekit') },
+      { icon: '🎖️', label: 'اختيار المعدات', hint: 'رتبتك ومعداتك (من مركز الشرطة)', disabled: !st.cop, run: () => showPanel('ranks') },
       { icon: '🗂️', label: 'قائمة الأدلة', hint: 'اقرأ سجل حياة أي حقيبة', disabled: !st.cop, run: () => act('evidencelist') },
       { icon: '✅', label: 'قبول الرشوة', hint: st.bribeOffer ? `${money(st.bribeOffer.amount)} (تنسجل في سجل الفساد)` : 'لا يوجد عرض', disabled: !st.bribeOffer, run: () => act('acceptbribe') },
       { icon: '❌', label: 'رفض الرشوة', hint: 'تصادر الحقيبة', disabled: !st.bribeOffer, run: () => act('refusebribe') },
@@ -155,13 +123,6 @@ function itemsFor(id) {
       { icon: '📰', label: st.press ? 'خروج من الصحافة' : 'دخول كصحفي', hint: 'وضع التجربة', disabled: !st.pressAllowed, run: () => act('press') },
       { icon: '📸', label: 'تصوير الحدث', hint: 'أقرب حدث حقيقي خلال ٣٠ متر', disabled: !st.press, run: () => act('snap') },
       { icon: '📝', label: 'نشر خبر', hint: 'العنوان يطلع للجميع', disabled: !st.press, run: () => askText('عنوان الخبر', (t) => act('publish', [t])) },
-    ];
-    case 'bench': return [
-      CLOSE,
-      { icon: '🔫', label: 'أسلحة', hint: `رصيدك كاش: ${money(st.cash)}`, run: weaponsPicker },
-      { icon: '🔧', label: 'تعديل سلاح', hint: 'كاتم، مخزن موسّع، منظار...', disabled: !(st.guns || []).length, run: ownedPicker('اختر السلاح للتعديل', (w) => ({ icon: '🔫', label: w.label, hint: `${w.mods.length} تعديلات`, run: () => modPicker(w) })) },
-      { icon: '🎯', label: 'تعبئة ذخيرة', hint: 'تكلفتها ٣٠٪ من سعر السلاح', disabled: !(st.guns || []).length, run: ownedPicker('اختر السلاح للتعبئة', (w) => ({ icon: '🎯', label: w.label, hint: `${money(w.refill)} كاش · +${w.ammo}`, disabled: (st.cash || 0) < w.refill, run: () => { act('refill', [w.id]); picker = null; render(); } })) },
-      { icon: '🛡️', label: 'درع', hint: `${money(gear.armor)} كاش`, disabled: (st.cash || 0) < gear.armor, run: () => act('buyarmor') },
     ];
     case 'tools': return [
       CLOSE,
@@ -302,9 +263,9 @@ function openMenu(msg) {
   nearby = msg.nearby || [];
   places = msg.places || places;
   if (msg.bribe) bribe = msg.bribe;
-  if (msg.gear) gear = msg.gear;
-  if (msg.near) near = msg.near;
+  if (msg.catalog) catalog = msg.catalog;
   if (msg.state) st = msg.state;
+  if (msg.panel) return showPanel(msg.panel);
   $('#menu').hidden = false;
   render();
 }
@@ -312,7 +273,11 @@ function closeMenu() {
   if (!menuOpen) return;
   menuOpen = false;
   picker = null;
+  panel = null;
   $('#menu').hidden = true;
+  $('#market').hidden = true;
+  $('#ranks').hidden = true;
+  $('#ammoModal').hidden = true;
   closeModal();
   $('#doc').hidden = true;
   post('close');
@@ -321,6 +286,7 @@ function closeMenu() {
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (!$('#modal').hidden) return closeModal();
+    if (!$('#ammoModal').hidden) { $('#ammoModal').hidden = true; return; }
     if (!$('#doc').hidden) { $('#doc').hidden = true; return; }
     if (picker) { picker = null; return render(); }
     return closeMenu();
@@ -337,8 +303,12 @@ window.addEventListener('message', (e) => {
   const d = e.data || {};
   switch (d.type) {
     case 'open': openMenu(d); break;
-    case 'close': menuOpen = false; $('#menu').hidden = true; closeModal(); $('#doc').hidden = true; break;
-    case 'state': st = d.state || {}; renderHud(); if (menuOpen && !(document.activeElement && document.activeElement.tagName === 'INPUT')) render(); break;
+    case 'close': menuOpen = false; panel = null; $('#menu').hidden = true; $('#market').hidden = true; $('#ranks').hidden = true; $('#ammoModal').hidden = true; closeModal(); $('#doc').hidden = true; break;
+    case 'state':
+      st = d.state || {}; renderHud();
+      if (panel) renderPanel();
+      else if (menuOpen && !(document.activeElement && document.activeElement.tagName === 'INPUT')) render();
+      break;
     case 'nearby': {
       // نعيد الرسم فقط لو تغيّر من هو قريب، حتى ما تضيع نقرة بين الضغط والإفلات
       const changed = nearby.map((p) => p.id).join() !== (d.list || []).map((p) => p.id).join();
@@ -357,3 +327,189 @@ window.addEventListener('message', (e) => {
     default: break;
   }
 });
+
+// ===== السوق السوداء =====
+const ICON = { pistol: '🔫', smg: '🔫', shotgun: '🔫', rifle: '🔫', rpg: '🚀', armor: '🦺', bag: '🎒' };
+const SLOT_LABEL = { primary: 'سلاح رئيسي', secondary: 'سلاح ثانوي', armor: 'الدرع', bag: 'الحقيبة', pouch: 'الجراب' };
+let mkTab = 'weapons';
+let treeSel = null;
+let treeView = { x: 30, y: 30, k: 1 };
+
+const prog = () => st.prog || { unlocked: [], equip: {}, mods: {}, xp: 0, squares: catalog.base.squares || 18 };
+const nodeOpen = (n) => !!n.root || (prog().unlocked || []).includes(n.id);
+const nodeOf = (id) => catalog.tree.find((n) => n.id === id);
+const slotOf = (it) => (it.cat === 'weapon' ? it.slot || 'primary' : it.cat);
+const isLocked = (it) => !!it.node && !(nodeOf(it.node) && nodeOpen(nodeOf(it.node)));
+const isEquipped = (it) => prog().equip[slotOf(it)] === it.id;
+const itemOf = (id) => catalog.weapons.find((w) => w.id === id) || catalog.gear.find((g) => g.id === id);
+
+function showPanel(name) {
+  panel = name;
+  $('#menu').hidden = true;
+  $('#market').hidden = name !== 'market';
+  $('#ranks').hidden = name !== 'ranks';
+  menuOpen = true;
+  renderPanel();
+}
+function renderPanel() { if (panel === 'market') renderMarket(); else if (panel === 'ranks') renderRanks(); }
+
+function card(it) {
+  const locked = isLocked(it), eq = isEquipped(it), poor = (st.cash || 0) < it.price;
+  const stat = it.cat === 'weapon' ? `ذخيرة ${it.ammo}` : it.cat === 'armor' ? `حماية ${it.armor}` : `سعة ${money(it.capacity)} · ${it.squares} خانة`;
+  return h('button', {
+    class: `card t${it.tier}` + (eq ? ' eq' : '') + (locked ? ' locked' : ''), type: 'button', disabled: eq || (!locked && poor),
+    onclick: () => { if (locked) { mkTab = 'tree'; treeSel = it.node; renderMarket(); } else act('m_buy', [it.id]); },
+  }, h('span', { class: 'ico' }, ICON[it.id] || ICON[it.cat] || '📦'), h('b', {}, it.label), h('small', {}, stat),
+  h('span', { class: 'price' }, eq ? 'مجهّز' : locked ? 'افتحه من الشحنات' : money(it.price)));
+}
+
+function tiers(items) {
+  const out = [];
+  for (const t of [1, 2, 3]) {
+    const list = items.filter((i) => i.tier === t);
+    if (list.length) out.push(h('section', { class: `tier t${t}` }, h('h3', {}, `الدرجة ${t}`), h('div', { class: 'cards' }, list.map(card))));
+  }
+  return out;
+}
+
+function renderMarket() {
+  $('#mkCash').textContent = money(st.cash);
+  const tabs = [['weapons', 'الأسلحة'], ['equipment', 'المعدات'], ['ammo', 'الذخيرة'], ['tree', 'الشحنات']];
+  $('#mkTabs').replaceChildren(...tabs.map(([id, label]) => h('button', { class: 'mk-tab' + (id === mkTab ? ' on' : ''), type: 'button', onclick: () => { mkTab = id; renderMarket(); } }, label)));
+  $('#mkClose').onclick = () => closeMenu();
+
+  const main = $('#mkMain'), side = $('#mkSide');
+  const body = main.parentElement;
+  body.classList.toggle('solo', mkTab === 'tree');
+  side.hidden = mkTab === 'tree';
+
+  if (mkTab === 'weapons') main.replaceChildren(...tiers(catalog.weapons));
+  else if (mkTab === 'equipment') main.replaceChildren(...tiers(catalog.gear));
+  else if (mkTab === 'ammo') {
+    const eqs = catalog.weapons.filter((w) => isEquipped(w));
+    main.replaceChildren(eqs.length
+      ? h('div', { class: 'cards' }, eqs.map((w) => h('button', { class: `card t${w.tier}`, type: 'button', onclick: () => openAmmo(w) },
+        h('span', { class: 'ico' }, '🎯'), h('b', {}, w.label), h('small', {}, `${money(ammoEach(w))} للطلقة`), h('span', { class: 'price' }, 'اشترِ ذخيرة'))))
+      : h('div', { class: 'empty' }, 'جهّز سلاحاً أول من تبويب «الأسلحة»'));
+  } else renderTree(main);
+
+  if (mkTab !== 'tree') renderSide(side);
+}
+
+function renderSide(side) {
+  const p = prog(), squares = p.squares || 18, cap = st.cap || catalog.base.capacity || 60000;
+  const bag = st.bag;
+  const filled = bag ? Math.min(squares, Math.max(1, Math.ceil((bag.value / cap) * squares))) : 0;
+  const cells = Array.from({ length: squares }, (_, i) => h('div', { class: 'cell' + (i < filled ? ' full' : '') }));
+  const slots = ['primary', 'secondary', 'armor', 'bag', 'pouch'].map((sl) => {
+    const it = itemOf(p.equip[sl]);
+    return h('div', { class: 'slot' + (it ? ' on' : '') }, h('small', {}, SLOT_LABEL[sl]), h('b', {}, it ? it.label : sl === 'pouch' ? 'قريباً' : '—'));
+  });
+  const mods = [];
+  for (const w of catalog.weapons.filter((x) => isEquipped(x) && x.mods && x.mods.length)) {
+    for (const m of w.mods) {
+      const done = p.mods && p.mods[w.id] && p.mods[w.id][m.id];
+      mods.push(h('div', { class: 'modrow' }, h('span', {}, `${w.label} · ${m.label}`),
+        h('button', { type: 'button', disabled: !!done || (st.cash || 0) < m.price, onclick: () => act('m_mod', [w.id, m.id]) }, done ? 'مركّب' : money(m.price))));
+    }
+  }
+  side.replaceChildren(
+    h('div', {}, h('h3', {}, `الحقيبة · ${squares} خانة`), h('div', { class: 'grid' }, cells),
+      h('p', { class: 'sub' }, bag ? `غنائمك: ${money(bag.value)} / ${money(cap)}` : `السعة: ${money(cap)}`)),
+    h('div', {}, h('h3', {}, 'التجهيز'), h('div', { class: 'slots' }, slots)),
+    mods.length ? h('div', {}, h('h3', {}, 'التعديلات'), h('div', { style: 'display:flex;flex-direction:column;gap:6px' }, mods)) : null,
+    h('button', { class: 'restore', type: 'button', onclick: () => act('m_restore') }, 'استرجاع معداتي بعد الدخول'));
+}
+
+// ===== شراء الذخيرة =====
+const ammoEach = (w) => Math.max(1, Math.floor((w.price * (catalog.refill || 0.3)) / w.ammo));
+let ammoW = null;
+function openAmmo(w) {
+  ammoW = w;
+  $('#ammoTitle').textContent = `ذخيرة ${w.label}`;
+  const r = $('#ammoRange');
+  r.value = Math.min(360, w.ammo);
+  updateAmmo();
+  $('#ammoModal').hidden = false;
+}
+function updateAmmo() {
+  const q = Number($('#ammoRange').value);
+  $('#ammoQty').textContent = q;
+  $('#ammoPrice').textContent = money(q * ammoEach(ammoW));
+}
+$('#ammoRange').addEventListener('input', updateAmmo);
+$('#ammoCancel').addEventListener('click', () => { $('#ammoModal').hidden = true; });
+$('#ammoForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  act('m_ammo', [ammoW.id, Number($('#ammoRange').value)]);
+  $('#ammoModal').hidden = true;
+});
+
+// ===== شجرة الشحنات (سحب وتكبير) =====
+function renderTree(container) {
+  const W = 190, H = 120, NW = 150, NH = 70;
+  const pos = (n) => ({ x: n.col * W, y: n.row * H });
+  const stage = h('div', { class: 'tree-stage' });
+  const wrap = h('div', { class: 'tree-wrap' }, stage);
+  const apply = () => { stage.style.transform = `translate(${treeView.x}px,${treeView.y}px) scale(${treeView.k})`; };
+
+  const maxX = Math.max(...catalog.tree.map((n) => pos(n).x)) + NW + 40, maxY = Math.max(...catalog.tree.map((n) => pos(n).y)) + NH + 40;
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('width', maxX); svg.setAttribute('height', maxY);
+  for (const n of catalog.tree) {
+    for (const rid of n.requires || []) {
+      const r = nodeOf(rid), a = pos(r), b = pos(n);
+      const path = document.createElementNS(NS, 'path');
+      const x1 = a.x + NW, y1 = a.y + NH / 2, x2 = b.x, y2 = b.y + NH / 2, mx = (x1 + x2) / 2;
+      path.setAttribute('d', `M${x1} ${y1} C${mx} ${y1} ${mx} ${y2} ${x2} ${y2}`);
+      if (nodeOpen(r) && nodeOpen(n)) path.setAttribute('class', 'on');
+      svg.append(path);
+    }
+  }
+  stage.append(svg);
+
+  for (const n of catalog.tree) {
+    const p = pos(n), open = nodeOpen(n), ready = !open && (n.requires || []).every((r) => nodeOpen(nodeOf(r)));
+    const el = h('button', { class: 'node' + (open ? ' open' : ready ? ' avail' : '') + (treeSel === n.id ? ' sel' : ''), type: 'button',
+      style: `left:${p.x}px;top:${p.y}px`, onclick: (e) => { e.stopPropagation(); treeSel = n.id; renderMarket(); } },
+    h('span', {}, n.label), h('small', {}, open ? 'مفتوحة' : money(n.cost)));
+    stage.append(el);
+  }
+
+  // شريط التفاصيل
+  const sel = treeSel && nodeOf(treeSel);
+  if (sel) {
+    const open = nodeOpen(sel), missing = (sel.requires || []).filter((r) => !nodeOpen(nodeOf(r))).map((r) => nodeOf(r).label);
+    const items = [...catalog.weapons, ...catalog.gear].filter((i) => i.node === sel.id).map((i) => i.label);
+    wrap.append(h('div', { class: 'tree-bar' },
+      h('div', {}, h('b', {}, sel.label), h('div', { class: 'sub' }, items.length ? `تفتح: ${items.join('، ')}` : 'نقطة بداية'),
+        missing.length ? h('div', { class: 'sub' }, `تحتاج أول: ${missing.join('، ')}`) : null),
+      open ? h('span', { class: 'sub' }, 'مفتوحة ✓') : h('button', { class: 'go', type: 'button', disabled: missing.length > 0 || (st.cash || 0) < sel.cost, onclick: () => act('m_unlock', [sel.id]) }, `فتح بـ ${money(sel.cost)}`)));
+  }
+
+  // سحب
+  let drag = null;
+  wrap.addEventListener('pointerdown', (e) => { if (e.target.closest('.tree-bar,.node')) return; drag = { x: e.clientX - treeView.x, y: e.clientY - treeView.y }; wrap.classList.add('drag'); wrap.setPointerCapture(e.pointerId); });
+  wrap.addEventListener('pointermove', (e) => { if (!drag) return; treeView.x = e.clientX - drag.x; treeView.y = e.clientY - drag.y; apply(); });
+  wrap.addEventListener('pointerup', () => { drag = null; wrap.classList.remove('drag'); });
+  // تكبير
+  wrap.addEventListener('wheel', (e) => { e.preventDefault(); treeView.k = Math.min(1.8, Math.max(0.5, treeView.k * (e.deltaY < 0 ? 1.1 : 0.9))); apply(); }, { passive: false });
+  apply();
+  container.replaceChildren(wrap);
+}
+
+// ===== اختيار معدات الشرطة =====
+function renderRanks() {
+  const p = prog();
+  $('#rkSub').textContent = `نقاطك: ${p.xp || 0}` + (st.cop ? '' : ' · ادخل الخدمة أول');
+  $('#rkClose').onclick = () => closeMenu();
+  $('#rkCards').replaceChildren(...catalog.ranks.map((r) => {
+    const inUse = p.rank === r.id, locked = (p.xp || 0) < r.xp;
+    return h('div', { class: 'rk' }, h('h2', {}, r.label),
+      h('ul', {}, [...r.kit.map((k) => h('li', {}, k.label)), h('li', {}, `درع ${r.armor}`)]),
+      h('div', { class: 'need' }, r.xp ? `يحتاج ${r.xp} نقطة` : 'بداية الخدمة'),
+      h('button', { type: 'button', disabled: locked || !st.cop || inUse, onclick: () => act('rank_select', [r.id]) },
+        inUse ? 'قيد الاستخدام' : locked ? 'مقفلة' : 'تأكيد'));
+  }));
+}
