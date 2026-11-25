@@ -115,7 +115,7 @@ public class WelcomeOverlay : Grid
         string P(string k, string v) => (k + "                ")[..10] + v;
         var lines = new List<string>
         {
-            P("PROCESSOR", s.Cpu), P("MEMORY", $"{s.Ram}  {s.RamSub}".Replace("منافذ", "slots")), P("GRAPHICS", s.Gpu),
+            P("PROCESSOR", L.TEn(s.Cpu + "  " + s.CpuSub)), P("MEMORY", L.TEn($"{s.Ram}  {s.RamSub}")), P("GRAPHICS", s.Gpu),
             P("STORAGE", s.Storage), P("SENSORS", double.IsNaN(hw.GpuTemp) && double.IsNaN(hw.CpuTemp) ? "standby" : $"online  {(double.IsNaN(hw.CpuTemp) ? "—" : hw.CpuTemp.ToString("0") + "°")} / {(double.IsNaN(hw.GpuTemp) ? "—" : hw.GpuTemp.ToString("0") + "°")}"),
             P("SYSTEM", s.Os),
         };

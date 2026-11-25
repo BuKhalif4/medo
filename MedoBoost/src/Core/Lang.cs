@@ -32,7 +32,7 @@ public static class L
         ("جاري إعادة تشغيل البرنامج...", "Restarting the app..."),
         ("جهّز للعب (Ctrl+Shift+G)", "Game Ready (Ctrl+Shift+G)"),
         ("نقطة الاستعادة جاهزة", "Restore point is ready"),
-        ("أنوية", "cores"), ("مسار", "threads"), ("منافذ", "slots"), ("من", "of"), ("تعريف", "driver"), ("مستخدم", "used"), ("متاح", "free"),
+        ("أنوية", "cores"), ("مسار", "threads"), ("منافذ", "slots"), ("من", "of"), ("تعريف", "driver"), ("مستخدم", "used"), ("متاح", "free"), ("ناشر غير معروف", "Unknown publisher"),
     };
 
     static void Build()
@@ -82,7 +82,7 @@ public static class L
         r = Regex.Replace(r, @"\bمن\b", "of");
         r = Regex.Replace(r, @"(\d) أنوية", "$1 cores");
         r = Regex.Replace(r, @"(\d) مسار", "$1 threads");
-        r = Regex.Replace(r, @"تعريف (?=\d)", "Driver ");
+        r = Regex.Replace(r, @"تعريف\s*(?=[\u202A\d])", "Driver ");
         return r;
     }
 
@@ -108,6 +108,14 @@ public static class L
     }
 
     public static void InstallHook() { }   // (kept so callers stay valid; the sweep is driven by the main window)
+
+    /// <summary>Always English (used by the boot-up intro, whose hardware lines are technical readouts in both languages).</summary>
+    public static string TEn(string s)
+    {
+        if (string.IsNullOrEmpty(s) || !HasArabic.IsMatch(s)) return s;
+        Build();
+        return Translate(s);
+    }
 
     /// <summary>Arabic words left in a text (used by the self-test to find untranslated strings).</summary>
     public static bool HasArabicText(string s) => !string.IsNullOrEmpty(s) && HasArabic.IsMatch(s);
