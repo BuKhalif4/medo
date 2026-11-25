@@ -8,6 +8,9 @@ sv_hostname "Bag City - Test"
 # عدد اللاعبين الكبير يحتاج OneSync
 set onesync on
 
+# بدون بوتات: السيرفر ما يصنع مشاة ولا سيارات (يخفف الحمل كثير)
+set onesync_population false
+
 # حماية: يمنع العملاء من إنشاء كيانات لا يعرفها السيرفر.
 # جرّب relaxed أولاً. strict أقوى لكن قد يكسر سكربتات تنشئ مركبات من جهة العميل.
 set sv_entityLockdown "relaxed"

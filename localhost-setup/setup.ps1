@@ -56,6 +56,12 @@ if (-not (Test-Path $cfg)) {
   (Get-Content $cfg -Raw).Replace('PUT_YOUR_KEY_HERE', $key.Trim()) | Set-Content $cfg -Encoding UTF8
 }
 
+# 4b) تحديث server.cfg الموجود بأسطر جديدة (بدون لمس مفتاحك)
+if (-not (Select-String -Path $cfg -Pattern 'onesync_population' -Quiet)) {
+  Add-Content $cfg "`r`nset onesync_population false"
+  Write-Host '> server.cfg updated (no ambient NPCs)'
+}
+
 # 5) ملفات التشغيل
 $bat = Join-Path $root 'start.bat'
 Set-Content $bat "@echo off`r`ncd /d `"$data`"`r`n`"$server\FXServer.exe`" +exec server.cfg`r`npause" -Encoding ASCII
