@@ -31,6 +31,20 @@ local function isCop(src) return copsDuty[src] == true or Bridge.isCop(src) end
 
 local function clamp(v, a, b) return math.max(a, math.min(b, v)) end
 
+-- ===== الحوادث: كل شيء مهم يتسجل كحادثة يقدر الصحفي يصوّرها =====
+local incidents, incSeq = {}, 0
+local pressDuty = {}
+local KIND = { heist = 'سطو مسلح', drop = 'حقيبة مرمية', arrest = 'عملية قبض', bribe = 'رشوة' }
+
+local function addIncident(kind, coords, extra)
+  incSeq = incSeq + 1
+  extra = extra or {}
+  extra.id, extra.kind, extra.c, extra.t = incSeq, kind, coords, os.time()
+  incidents[incSeq] = extra
+  incidents[incSeq - Config.IncidentKeep] = nil
+  return incSeq
+end
+
 local function heatLabel(h)
   if h < 30 then return 'بارد' elseif h < 60 then return 'دافئ' else return 'ساخن' end
 end
@@ -119,7 +133,7 @@ RegisterNetEvent('bagcity:server:startRob', function(id)
   if not Sec.near(src, h.coords, h.radius + 2.0) then return Sec.strike(src, 'rob out of range') end
   if p.bag and p.bag.value >= Config.MaxBagValue then return say(src, 'حقيبتك ممتلئة.') end
 
-  p.rob = { id = id, t = os.time() }
+  p.rob = { id = id, t = os.time(), inc = addIncident('heist', h.coords, { who = p.alias, label = h.label, heat = h.heat }) }
   cooldowns[id] = os.time() + h.cooldown
   heat[h.district] = (heat[h.district] or 0) + h.heat
   alertCops(h)
@@ -140,6 +154,7 @@ RegisterNetEvent('bagcity:server:finishRob', function()
   if not p or not p.rob then return end
   local h = heistById[p.rob.id]
   local elapsed = os.time() - p.rob.t
+  local incId = p.rob.inc
   p.rob = nil
   if elapsed < h.duration - 1 then return Sec.strike(src, 'rob finished too early') end
   if not Sec.near(src, h.coords, h.radius + 3.0) then
@@ -152,6 +167,7 @@ RegisterNetEvent('bagcity:server:finishRob', function()
   bag.value = math.min(Config.MaxBagValue, bag.value + amount)
   bag.heat = math.min(100, bag.heat + h.heat)
   addHist(bag, p.alias, 'سرقها من', h.label)
+  if incidents[incId] then incidents[incId].bag, incidents[incId].serial = bag, bag.serial end
   p.bag = bag
   pushBag(src)
   say(src, ('أخذت الغنيمة! حقيبتك الحين %s (حرارة: %s). الشرطة في طريقها، اهرب وبيّضها عند التاجر.'):format(bag.serial, heatLabel(bag.heat)))
@@ -172,6 +188,7 @@ RegisterCommand('dropbag', function(src)
   local c = Sec.coords(src)
   if not c then return end
   addHist(p.bag, p.alias or 'مدني', 'رماها بالشارع', '')
+  addIncident('drop', c, { bag = p.bag, serial = p.bag.serial, who = p.alias or 'مدني', heat = p.bag.heat })
   createDrop(c, p.bag)
   p.bag = nil
   pushBag(src)
@@ -272,6 +289,7 @@ local function seize(copSrc, target)
     local bag = tp.bag
     local cut = math.floor(bag.value * Config.CopCut)
     addHist(bag, 'الشرطة', 'صادرتها (' .. Bridge.name(copSrc) .. ')', '')
+    addIncident('arrest', Sec.coords(target) or { 0, 0, 0 }, { bag = bag, serial = bag.serial, who = tp.alias or 'مدني', heat = 25 })
     archiveBag(bag)
     Bridge.addCash(copSrc, cut)
     tp.bag = nil
@@ -347,6 +365,7 @@ RegisterCommand('acceptbribe', function(src)
   local tp = P[target]
   ledger[#ledger + 1] = { t = os.time(), cop = Bridge.name(src), amount = pd.offer, serial = tp and tp.bag and tp.bag.serial or nil }
   if tp and tp.bag then addHist(tp.bag, 'شرطي فاسد', 'قبض رشوة وأطلقه', '') end
+  addIncident('bribe', Sec.coords(src) or { 0, 0, 0 }, { bag = tp and tp.bag, serial = tp and tp.bag and tp.bag.serial, cop = Bridge.name(src), who = tp and tp.alias or 'مدني', heat = 40 })
   pending[target] = nil
   say(src, 'قبلت الرشوة. الله يستر عليك...')
   say(target, 'الشرطي قبل الرشوة وتركك تمشي بالحقيبة.')
@@ -399,6 +418,57 @@ RegisterCommand('bc_here', function(src)
   if src == 0 or not IsPlayerAceAllowed(src, 'bagcity.dev') then return end
   local c = Sec.coords(src)
   if c then say(src, ('{%.1f, %.1f, %.1f}'):format(c[1], c[2], c[3])) end
+end, false)
+
+-- ===== الصحافة: تصوّر الأحداث الحقيقية وتنشرها =====
+RegisterCommand('press', function(src)
+  if src == 0 or Bridge.fw ~= 'standalone' then return end
+  if not IsPlayerAceAllowed(src, 'bagcity.press') then return end
+  pressDuty[src] = not pressDuty[src] or nil
+  say(src, pressDuty[src] and 'دخلت كصحفي. قرّب من حدث واكتب /snap لتصوّره، ثم /publish [العنوان].' or 'خرجت من الصحافة.')
+end, false)
+
+RegisterCommand('snap', function(src)
+  if src == 0 or not pressDuty[src] or not Sec.rate(src, 'snap', 3000) then return end
+  local me, now, best, bestD = Sec.coords(src), os.time(), nil, Config.SnapRange
+  if not me then return end
+  for _, inc in pairs(incidents) do
+    if not inc.published and now - inc.t <= Config.IncidentTTL then
+      local d = Sec.dist(me, inc.c)
+      if d <= bestD then best, bestD = inc, d end
+    end
+  end
+  if not best then return say(src, 'ما فيه حدث قريب يستاهل التصوير.') end
+  local p = getP(src)
+  p.shots = p.shots or {}
+  p.shots[best.id] = true
+  say(src, ('صوّرت: %s. اكتب /publish [العنوان] وانشرها قبل ما يبرد الخبر.'):format(KIND[best.kind] or best.kind))
+end, false)
+
+RegisterCommand('publish', function(src, args)
+  if src == 0 or not pressDuty[src] or not Sec.rate(src, 'publish', 5000) then return end
+  local p = getP(src)
+  local pick
+  for id in pairs(p.shots or {}) do
+    local inc = incidents[id]
+    if inc and not inc.published and os.time() - inc.t <= Config.IncidentTTL then
+      if not pick or inc.t > pick.t then pick = inc end
+    end
+  end
+  if not pick then return say(src, 'ما عندك صور صالحة للنشر. صوّر حدثاً أولاً: /snap') end
+  local headline = table.concat(args, ' '):gsub('%^%d', ''):sub(1, Config.HeadlineMax)
+  if #headline < 3 then return say(src, 'اكتب عنواناً: /publish [العنوان]') end
+  pick.published = true
+  p.shots[pick.id] = nil
+  local tail = pick.kind == 'bribe' and pick.cop and (' | الشرطي: ' .. pick.cop) or ''
+  TriggerClientEvent('chat:addMessage', -1, { color = { 120, 200, 255 }, args = { 'الصحافة (' .. Bridge.name(src) .. ')', headline .. tail } })
+  if pick.bag then
+    pick.bag.heat = math.min(100, pick.bag.heat + Config.PressHeat)
+    addHist(pick.bag, 'صحفي ' .. Bridge.name(src), 'نشر خبراً: ' .. headline, '')
+  end
+  local reward = math.min(Config.PressRewardMax, 250 + (pick.heat or 0) * 60)
+  Bridge.addCash(src, reward)
+  say(src, ('تم النشر! مكافأتك %d.'):format(reward))
 end, false)
 
 -- ===== التنظيف والحفظ =====
@@ -454,7 +524,7 @@ AddEventHandler('playerDropped', function()
     addHist(p.bag, p.alias or 'مدني', 'وقعت منه (خرج من اللعبة)', '')
     createDrop(p.last, p.bag)
   end
-  P[src], pending[src], copsDuty[src] = nil, nil, nil
+  P[src], pending[src], copsDuty[src], pressDuty[src] = nil, nil, nil, nil
   for t, pd in pairs(pending) do if pd.cop == src then pending[t] = nil end end
   Sec.clear(src)
 end)

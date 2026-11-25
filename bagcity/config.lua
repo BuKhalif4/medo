@@ -36,6 +36,14 @@ Config.CopCut         = 0.10    -- نسبة الشرطي من قيمة الحق�
 Config.BribeMin       = 5000
 Config.BribeMax       = 200000
 
+-- ===== الصحافة =====
+Config.SnapRange      = 30.0    -- أقصى مسافة للتصوير (متر)
+Config.IncidentTTL    = 900     -- ثواني يبقى فيها الحدث صالحاً للتصوير والنشر
+Config.IncidentKeep   = 100     -- عدد الأحداث المحفوظة في الذاكرة
+Config.HeadlineMax    = 80      -- أقصى طول للعنوان
+Config.PressHeat      = 10      -- النشر يرفع حرارة الحقيبة (الإعلام ينفخ القصة)
+Config.PressRewardMax = 5000    -- سقف مكافأة الخبر الواحد
+
 -- ===== المحلات (غيّر الإحداثيات بأمر /bc_here) =====
 -- loot = {أقل, أعلى}, heat = كم ترتفع حرارة الحي والحقيبة, duration/cooldown بالثواني
 Config.Heists = {

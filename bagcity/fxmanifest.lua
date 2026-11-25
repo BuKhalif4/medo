@@ -4,7 +4,7 @@ lua54 'yes'
 
 name 'bagcity'
 description 'Bag City - loot bags that remember every hand they passed through'
-version '0.1.0'
+version '0.2.0'
 
 shared_script 'config.lua'
 

@@ -20,3 +20,4 @@ ensure bagcity
 add_ace builtin.everyone bagcity.cop allow
 add_ace builtin.everyone bagcity.ia allow
 add_ace builtin.everyone bagcity.dev allow
+add_ace builtin.everyone bagcity.press allow
