@@ -62,6 +62,11 @@ if (-not (Select-String -Path $cfg -Pattern 'onesync_population' -Quiet)) {
   Write-Host '> server.cfg updated (no ambient NPCs)'
 }
 
+if (-not (Select-String -Path $cfg -Pattern 'sv_master1' -Quiet)) {
+  Add-Content $cfg "`r`nsv_master1 `"`""
+  Write-Host '> server.cfg updated (not listed publicly)'
+}
+
 # 5) ملفات التشغيل
 $bat = Join-Path $root 'start.bat'
 Set-Content $bat "@echo off`r`ncd /d `"$data`"`r`n`"$server\FXServer.exe`" +exec server.cfg`r`npause" -Encoding ASCII
