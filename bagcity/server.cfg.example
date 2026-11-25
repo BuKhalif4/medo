@@ -1,0 +1,22 @@
+# ===== مثال إعداد لتجربة bagcity محلياً =====
+endpoint_add_tcp "0.0.0.0:30120"
+endpoint_add_udp "0.0.0.0:30120"
+sv_maxclients 8
+sv_licenseKey "ضع_مفتاحك_من_keymaster.fivem.net"
+sv_hostname "Bag City - Test"
+
+# عدد اللاعبين الكبير يحتاج OneSync
+set onesync on
+
+# حماية: يمنع العملاء من إنشاء كيانات لا يعرفها السيرفر.
+# جرّب relaxed أولاً. strict أقوى لكن قد يكسر سكربتات تنشئ مركبات من جهة العميل.
+set sv_entityLockdown "relaxed"
+
+ensure chat
+ensure bagcity
+
+# ===== صلاحيات التجربة =====
+# أي لاعب يقدر يدخل الخدمة كشرطي (للتجربة فقط! احذفه في السيرفر الحقيقي)
+add_ace builtin.everyone bagcity.cop allow
+add_ace builtin.everyone bagcity.ia allow
+add_ace builtin.everyone bagcity.dev allow
