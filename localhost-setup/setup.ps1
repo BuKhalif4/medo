@@ -1,4 +1,4 @@
-# يجهز سيرفر FiveM محلي لتجربة bagcity. شغّله مرة، وكرره بعد أي تحديث للإضافة.
+﻿# يجهز سيرفر FiveM محلي لتجربة bagcity. شغّله مرة، وكرره بعد أي تحديث للإضافة.
 $ErrorActionPreference = 'Stop'
 $root    = 'C:\FXServer'
 $server  = Join-Path $root 'server'
@@ -56,9 +56,22 @@ if (-not (Test-Path $cfg)) {
   (Get-Content $cfg -Raw).Replace('PUT_YOUR_KEY_HERE', $key.Trim()) | Set-Content $cfg -Encoding UTF8
 }
 
-# 5) ملف التشغيل
+# 5) ملفات التشغيل
 $bat = Join-Path $root 'start.bat'
 Set-Content $bat "@echo off`r`ncd /d `"$data`"`r`n`"$server\FXServer.exe`" +exec server.cfg`r`npause" -Encoding ASCII
 
+# play.bat: يشغّل السيرفر في نافذة، وينتظر، ثم يفتح FiveM ويدخلك عليه تلقائياً
+$play = Join-Path $root 'play.bat'
+$playText = @"
+@echo off
+start "FXServer" cmd /k "cd /d $data && $server\FXServer.exe +exec server.cfg"
+echo Waiting for the server to start (30s)...
+timeout /t 30 /nobreak >nul
+start "" "fivem://connect/localhost:30120"
+"@
+Set-Content $play $playText -Encoding ASCII
+
 Write-Host ''
-Write-Host 'تم! شغّل: C:\FXServer\start.bat'
+Write-Host 'تم! من الحين تشغّل اللعب بملف واحد: C:\FXServer\play.bat'
+$go = Read-Host 'تشغّله الحين؟ (y/n)'
+if ($go -eq 'y') { Start-Process $play }
