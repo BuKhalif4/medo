@@ -25,6 +25,22 @@ public class AppSettings
     public bool StartMinimized { get; set; } = false;
     public bool AutoGamePriority { get; set; } = false;
     public bool AutoUpdateCheck { get; set; } = true;
+    public string DismissedUpdateTag { get; set; } = "";
+    // Game Ready (what "جهّز للعب" does)
+    public bool GameReadyClose { get; set; } = true;
+    public bool GameReadyRam { get; set; } = true;
+    public bool GameReadyDns { get; set; } = true;
+    public bool GameReadyPower { get; set; } = true;
+    public bool GameReadyServices { get; set; } = true;
+    public bool GameReadyPauseUpdates { get; set; } = true;
+    public bool GameReadyMute { get; set; } = true;
+    public bool GameReadyAuto { get; set; } = false;
+    // tray + alerts
+    public bool MinimizeToTray { get; set; } = true;
+    public bool TrayHintShown { get; set; } = false;
+    public bool ThermalAlerts { get; set; } = true;
+    public int CpuTempLimit { get; set; } = 90;
+    public int GpuTempLimit { get; set; } = 85;
     public string BenchLabel { get; set; } = "قبل";
     public bool AutoRamClean { get; set; } = false;
     public int AutoRamThreshold { get; set; } = 85;

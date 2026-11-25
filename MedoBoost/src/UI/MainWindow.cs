@@ -26,6 +26,8 @@ public class MainWindow : Window
     PageBase current;
     public static MainWindow Instance { get; private set; }
     public static bool SkipUpdateCheck;
+    /// <summary>True when the app is really exiting (tray "خروج", update install, logoff); otherwise ✕ only hides to the tray.</summary>
+    public static bool Quitting;
     public OverlayWindow Overlay { get; private set; }
     TextBlock miniCpu, miniRam;
     ProgressBar miniCpuBar, miniRamBar;
@@ -52,6 +54,7 @@ public class MainWindow : Window
         });
 
         factories["home"] = () => new DashboardPage();
+        factories["game"] = () => new GameReadyPage();
         factories["fresh"] = () => new FreshPage();
         factories["clean"] = () => new CleanerPage();
         factories["apps"] = () => new ProcessesPage();
@@ -75,10 +78,35 @@ public class MainWindow : Window
                 t.Tick += async (_, _) => { t.Stop(); await UpdateUi.CheckAndPrompt(true); };
                 t.Start();
             }
+            if (!SkipUpdateCheck)
+            {
+                var dt = new DispatcherTimer { Interval = TimeSpan.FromSeconds(50) };
+                dt.Tick += async (_, _) =>
+                {
+                    dt.Stop();
+                    var disks = await Task.Run(DiskHealth.Read);
+                    var bad = disks.Where(d => d.Bad || d.Warn).ToList();
+                    if (bad.Count > 0)
+                        Notify.Push(bad.Any(d => d.Bad) ? "err" : "warn", "صحة القرص", string.Join(" | ", bad.Select(d => $"{d.Name}: {(d.Bad ? "حالته سيئة" : "يحتاج انتباه")}")) + "\nافتح «أدوات الإصلاح» ← صحة الأقراص، وخذ نسخة احتياطية من ملفاتك.", balloon: true);
+                };
+                dt.Start();
+            }
         };
         SourceInitialized += OnSourceInitialized;
         StateChanged += (_, _) => { if (Content is FrameworkElement fe) fe.Margin = WindowState == WindowState.Maximized ? new Thickness(7) : new Thickness(0); };
-        Closed += (_, _) => { try { Overlay?.Close(); } catch { } Application.Current.Shutdown(); };
+        Application.Current.SessionEnding += (_, _) => Quitting = true;
+        Closing += (_, e) =>
+        {
+            if (Quitting || !Settings.Current.MinimizeToTray || !Tray.Active) return;
+            e.Cancel = true;
+            Hide();
+            if (!Settings.Current.TrayHintShown)
+            {
+                Settings.Current.TrayHintShown = true; Settings.Save();
+                Tray.Balloon("KHA Boost شغّال بالخلفية", "اضغط على الأيقونة بجانب الساعة لفتحه. للخروج: كليك يمين ← خروج.");
+            }
+        };
+        Closed += (_, _) => { try { Overlay?.Close(); } catch { } Tray.Remove(); Application.Current.Shutdown(); };
 
         HardwareMonitor.Instance.Updated += s => Dispatcher.BeginInvoke(() =>
         {
@@ -125,6 +153,7 @@ public class MainWindow : Window
             nav.Children.Add(rb);
         }
         Nav("home", "", "الرئيسية");
+        Nav("game", "\uE768", "جهّز للعب");
         Nav("fresh", "\uE895", "تنظيف من الصفر");
         Nav("clean", "", "التنظيف العميق");
         Nav("apps", "", "البرامج والرامات");
@@ -154,6 +183,7 @@ public class MainWindow : Window
         // ---------- Content ----------
         var right = new Grid();
         right.RowDefinitions.Add(new RowDefinition { Height = new GridLength(44) });
+        right.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         right.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         Grid.SetColumn(right, 1);
         main.Children.Add(right);
@@ -167,20 +197,26 @@ public class MainWindow : Window
         maxB.Click += (_, _) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
         closeB.Click += (_, _) => Close();
         foreach (var b in new[] { closeB, maxB, minB }) { WindowChrome.SetIsHitTestVisibleInChrome(b, true); caption.Children.Add(b); }
+        NotifyUi.Init();
+        caption.Children.Add(NotifyUi.BuildBell());
         var capHost = new Grid { FlowDirection = FlowDirection.LeftToRight };
         capHost.Children.Add(caption);
         right.Children.Add(capHost);
 
+        Grid.SetRow(UpdateUi.Banner, 1);
+        right.Children.Add(UpdateUi.Banner);
+
         contentHost.Margin = new Thickness(34, 0, 34, 26);
-        Grid.SetRow(contentHost, 1);
+        Grid.SetRow(contentHost, 2);
         right.Children.Add(contentHost);
 
         // modal + toasts
         var modal = new Grid { Visibility = Visibility.Collapsed };
         Dialogs.Host = modal;
-        var toasts = new StackPanel { VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(24) };
-        Dialogs.ToastHost = toasts;
-        Grid.SetColumnSpan(modal, 2); Grid.SetColumnSpan(toasts, 2);
+        var toasts = NotifyUi.ToastHost;
+        var notifLayer = NotifyUi.BuildLayer();
+        Grid.SetColumnSpan(modal, 2); Grid.SetColumnSpan(toasts, 2); Grid.SetColumnSpan(notifLayer, 2);
+        main.Children.Add(notifLayer);
         main.Children.Add(toasts);
         root.Children.Add(modal);
         return root;
@@ -265,7 +301,9 @@ public class MainWindow : Window
         Native.RegisterHotKey(hwnd, HK_OVERLAY, MOD_CTRL | MOD_SHIFT | MOD_NOREPEAT, 0x46);  // Ctrl+Shift+F
         Native.RegisterHotKey(hwnd, HK_BENCH, MOD_CTRL | MOD_SHIFT | MOD_NOREPEAT, 0x42);    // Ctrl+Shift+B
         Native.RegisterHotKey(hwnd, HK_BOOST, MOD_CTRL | MOD_SHIFT | MOD_NOREPEAT, 0x47);    // Ctrl+Shift+G
-        HwndSource.FromHwnd(hwnd)?.AddHook(WndProc);
+        var hsrc = HwndSource.FromHwnd(hwnd);
+        hsrc?.AddHook(WndProc);
+        if (!SkipUpdateCheck) Tray.Init(hsrc);
         if (Settings.Current.OverlayEnabled) Dispatcher.BeginInvoke(() => SetOverlay(true), DispatcherPriority.Background);
     }
 
@@ -276,7 +314,7 @@ public class MainWindow : Window
             int id = wParam.ToInt32();
             if (id == HK_OVERLAY) SetOverlay(!(Overlay?.IsVisible ?? false));
             else if (id == HK_BENCH) BenchmarkHotkey?.Invoke();
-            else if (id == HK_BOOST) _ = GameBoost.Run(true);
+            else if (id == HK_BOOST) _ = GameMode.ToggleAsync();
             handled = true;
         }
         return IntPtr.Zero;

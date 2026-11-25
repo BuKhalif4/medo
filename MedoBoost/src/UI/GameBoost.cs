@@ -3,38 +3,9 @@ using MedoBoost.Core;
 
 namespace MedoBoost.UI;
 
-/// <summary>One click (or Ctrl+Shift+G) before playing: frees RAM, closes the apps you chose, flushes DNS.</summary>
+/// <summary>Raises the CPU priority of the game you are playing (the "جهّز للعب" page itself is in Core/GameMode.cs).</summary>
 public static class GameBoost
 {
-    static bool busy;
-
-    public static async Task Run(bool silent = false)
-    {
-        if (busy) return;
-        busy = true;
-        try
-        {
-            var (freed, killed) = await Task.Run(() =>
-            {
-                int k = 0;
-                foreach (var name in Settings.Current.BoostKillList.ToList())
-                    foreach (var p in Process.GetProcessesByName(name))
-                    {
-                        try { p.Kill(true); k++; } catch { } finally { p.Dispose(); }
-                    }
-                if (k > 0) Thread.Sleep(800);
-                Native.DnsFlushResolverCache();
-                long f = Memory.CleanAll();
-                return (f, k);
-            });
-            string msg = $"🚀 Game Boost: تم تحرير {Util.Size(freed)} رام" + (killed > 0 ? $" وإغلاق {killed} برنامج" : "");
-            Log.Ok(msg);
-            Dialogs.Toast(msg);
-        }
-        catch (Exception ex) { Dialogs.Toast("Game Boost: " + ex.Message, "err"); }
-        finally { busy = false; }
-    }
-
     static readonly HashSet<int> boosted = new();
     static System.Windows.Threading.DispatcherTimer autoTimer;
 

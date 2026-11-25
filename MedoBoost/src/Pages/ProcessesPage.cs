@@ -45,7 +45,7 @@ public class ProcessesPage : PageBase
             Dialogs.Toast($"تم تحرير {Util.Size(f)} من الرام");
             await Refresh();
         });
-        var boost = Ui.Btn("Game Boost", "", async () => await GameBoost.Run(), "BtnGhost");
+        var boost = Ui.Btn("جهّز للعب", "", async () => await GameMode.ToggleAsync(), "BtnGhost");
         var sysToggle = Ui.Check(Ui.Txt("إظهار عمليات النظام", 12.5, "TextDim"), false, v => { showSystem = v; _ = Refresh(); });
         search.TextChanged += (_, _) => ApplyFilter();
         var searchBox = new Grid();
@@ -207,11 +207,11 @@ public class ProcessesPage : PageBase
         MI("الأولوية: عادية", () => ProcessManager.SetPriority(r.G, ProcessPriorityClass.Normal));
         MI("الأولوية: منخفضة (للبرامج اللي بالخلفية)", () => ProcessManager.SetPriority(r.G, ProcessPriorityClass.BelowNormal));
         MI("فتح مكان الملف", () => { if (r.G.Path != null) Util.OpenFolder(r.G.Path); });
-        MI("إضافة/إزالة من قائمة الإغلاق في Game Boost", () =>
+        MI("إضافة/إزالة من قائمة «جهّز للعب»", () =>
         {
             var l = Settings.Current.BoostKillList;
-            if (l.Remove(r.G.Name)) Dialogs.Toast($"{r.G.Title} انشال من قائمة Game Boost", "info");
-            else { l.Add(r.G.Name); Dialogs.Toast($"{r.G.Title} رح يتسكر تلقائياً عند Game Boost", "info"); }
+            if (l.Remove(r.G.Name)) Dialogs.Toast($"{r.G.Title} انشال من قائمة «جهّز للعب»", "info");
+            else { l.Add(r.G.Name); Dialogs.Toast($"{r.G.Title} رح يتسكر لما تضغط «جهّز للعب»", "info"); }
             Settings.Save();
         });
         r.Root.ContextMenu = cm;

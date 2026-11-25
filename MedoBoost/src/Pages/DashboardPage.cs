@@ -124,7 +124,7 @@ public class DashboardPage : PageBase
                 var f = await Task.Run(() => Memory.CleanAll());
                 Dialogs.Toast($"تم تحرير {Util.Size(f)} من الرام");
             }),
-            QuickBtn("", "Game Boost", "رام + إغلاق البرامج المختارة (Ctrl+Shift+G)", async () => await GameBoost.Run()),
+            QuickBtn("", "جهّز للعب", "رام + إغلاق برامج + طاقة قصوى (Ctrl+Shift+G)", async () => await GameMode.ToggleAsync()),
             QuickBtn("", "تشغيل/إيقاف الأوفرلاي", "FPS والحرارة فوق الشاشة (Ctrl+Shift+F)", () =>
             {
                 MainWindow.Instance.SetOverlay(!(MainWindow.Instance.Overlay?.IsVisible ?? false));

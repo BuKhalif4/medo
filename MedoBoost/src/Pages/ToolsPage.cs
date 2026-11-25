@@ -77,6 +77,39 @@ public class ToolsPage : PageBase
         Tool("", "إدارة الأجهزة", "لفحص التعريفات والأجهزة اللي فيها مشاكل.", "افتح", () => { Util.OpenUrl("devmgmt.msc"); return Task.CompletedTask; });
 
         root.Children.Add(grid);
+
+        // ---- drive health (SMART-like)
+        var diskList = new StackPanel();
+        var diskBtn = Ui.Btn("افحص الأقراص", "\uE721", null);
+        diskBtn.HorizontalAlignment = HorizontalAlignment.Left;
+        diskBtn.Click += async (_, _) =>
+        {
+            diskBtn.IsEnabled = false; diskList.Children.Clear();
+            diskList.Children.Add(Ui.Txt("جاري فحص الأقراص...", 12.5, "TextDim"));
+            var disks = await Task.Run(DiskHealth.Read);
+            diskList.Children.Clear();
+            if (disks.Count == 0) diskList.Children.Add(Ui.Txt("ما قدرت أقرأ بيانات الأقراص (الجهاز الافتراضي أو تعريف مخصص).", 12.5, "TextMute"));
+            foreach (var d in disks)
+            {
+                string state = d.Bad ? "خطر" : d.Warn ? "تحذير" : "سليم";
+                string color = d.Bad ? "Bad" : d.Warn ? "Warn" : "Good";
+                var info = new List<string>();
+                if (d.Temp != null) info.Add($"الحرارة {d.Temp:0}°C");
+                if (d.Wear != null) info.Add($"استهلاك العمر {d.Wear:0}%");
+                if (d.Hours != null) info.Add($"ساعات التشغيل {d.Hours:N0} ({d.Hours / 24:N0} يوم)");
+                if ((d.Errors ?? 0) > 0) info.Add($"أخطاء {d.Errors:N0}");
+                var name = Ui.Txt($"{d.Name}  •  {Util.Size(d.Size)}  •  {d.Media}", 13, "Text", FontWeights.SemiBold).Ltr();
+                name.HorizontalAlignment = HorizontalAlignment.Right;
+                var line = Ui.Txt(info.Count > 0 ? string.Join("   •   ", info) : "ما في تفاصيل إضافية من القرص", 12, "TextDim", null, TextWrapping.Wrap);
+                var row = Ui.Cols(new[] { "*", "Auto" }, Ui.VStack(name, line.M(0, 3, 0, 0)), Ui.Badge(state, color, d.Bad ? "#33EF4444" : d.Warn ? "#33F59E0B" : "#3322C55E"));
+                diskList.Children.Add(new Border { Child = row, Padding = new Thickness(14, 10, 14, 10), Margin = new Thickness(0, 0, 0, 8), CornerRadius = new CornerRadius(10), Background = Ui.B("Surface2") });
+            }
+            diskBtn.IsEnabled = true;
+        };
+        root.Children.Add(Ui.Card(Ui.VStack(
+            Ui.HStack(10, Ui.Icon("\uEDA2", 18, "Accent2"), Ui.Txt("صحة الأقراص", 15, "Text", FontWeights.Bold)),
+            Ui.Txt("يقرأ حالة الـ SSD/HDD (العمر المستهلك، الحرارة، الأخطاء) وينبهك قبل ما يخرب. البرنامج يفحصها لحاله مرة عند كل تشغيل.", 12, "TextDim", null, TextWrapping.Wrap).M(0, 8, 0, 12),
+            diskBtn.M(0, 0, 0, 12), diskList), 20).M(0, 6, 0, 10));
         Children.Add(Ui.Scroll(root));
         Ui.Stagger(grid, 40, 100);
     }

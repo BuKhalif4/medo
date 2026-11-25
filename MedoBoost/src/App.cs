@@ -54,6 +54,8 @@ public static class Program
             return 1;
         }
         GameBoost.StartAutoPriority();
+        ThermalWatch.Start();
+        GameMode.StartAuto();
         if (selfTest) win.Loaded += (_, _) => _ = SelfTest(win, args.Length > 1 ? args[1] : "selftest");
         int code = app.Run(win);
 
@@ -69,6 +71,7 @@ public static class Program
         Directory.CreateDirectory(outDir);
         try
         {
+            MainWindow.Quitting = true;
             await Task.Delay(2500);
             foreach (var id in win.PageIds.ToList())
             {
@@ -77,6 +80,18 @@ public static class Program
                 Snap(win, Path.Combine(outDir, $"{id}.png"));
                 Console.WriteLine("page ok: " + id);
             }
+            // notification center + update banner screenshots
+            win.Navigate("home");
+            Notify.Push("ok", "تم", "تم تنظيف 1.2 GB من الملفات المؤقتة");
+            Notify.Push("warn", "حرارة المعالج مرتفعة 🔥", "93°C منذ ثواني. افحص التهوية والمراوح.");
+            Notify.Push("info", "نسخة جديدة v9.9.9", "لما تكون جاهز اضغط «حدّث الآن» من الشريط بأعلى الصفحة.");
+            UpdateUi.Preview();
+            await Task.Delay(900);
+            Snap(win, Path.Combine(outDir, "toasts-banner.png"));
+            NotifyUi.Toggle(true);
+            await Task.Delay(700);
+            Snap(win, Path.Combine(outDir, "notifications.png"));
+            NotifyUi.Toggle(false);
             win.SetOverlay(true);
             await Task.Delay(1500);
             if (win.Overlay != null) Snap(win.Overlay, Path.Combine(outDir, "overlay.png"));
@@ -138,6 +153,21 @@ public static class Program
                 try { Cleaner.Scan(i); long size = i.Size; Cleaner.Clean(i, w); W($"{i.Id,-18} found={Util.Size(size)} freed={Util.Size(i.Freed)} skipped={i.Skipped}"); }
                 catch (Exception ex) { W($"{i.Id} ERR {ex.Message}"); }
             }
+        W("");
+        W("=== GAME MODE (activate → verify → restore) ===");
+        try
+        {
+            var before = Tweaks.ActiveScheme();
+            var st = GameMode.Activate(0, "test");
+            W($"active={GameMode.Active} ram={Util.Size(st.RamFreed)} services={string.Join(",", st.StoppedServices)} plan {before} → {Tweaks.ActiveScheme()} muted={st.MutedToasts} pausedUpdates={st.PausedUpdates}");
+            GameMode.Deactivate();
+            W($"after restore: active={GameMode.Active} plan={Tweaks.ActiveScheme()} (expected {before}) toast={Reg.Get("HKCU", @"Software\Microsoft\Windows\CurrentVersion\PushNotifications", "ToastEnabled")} pause={Reg.Get("HKLM", @"SOFTWARE\Microsoft\WindowsUpdate\UX\Settings", "PauseUpdatesExpiryTime")}");
+        }
+        catch (Exception ex) { W("GameMode ERR " + ex); }
+        W("");
+        W("=== DISK HEALTH ===");
+        try { var dk = DiskHealth.Read(); W($"disks: {dk.Count}"); foreach (var d in dk) W($"{d.Name} | {d.Media} | {Util.Size(d.Size)} | health={d.Health} temp={d.Temp} wear={d.Wear} hours={d.Hours} errors={d.Errors}"); }
+        catch (Exception ex) { W("Disk ERR " + ex.Message); }
         W("");
         W("=== SECURITY / UPDATES / UNINSTALL (read-only) ===");
         try { var d = Security.Status(); W($"Defender available={d.Available} realtime={d.RealtimeOn} tamper={d.TamperOn} sig={d.Signature}"); } catch (Exception ex) { W("Defender ERR " + ex.Message); }

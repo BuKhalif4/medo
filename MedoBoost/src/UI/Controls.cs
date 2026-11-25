@@ -170,7 +170,6 @@ public class Sparkline : FrameworkElement
 public static class Dialogs
 {
     public static Grid Host;      // modal layer
-    public static StackPanel ToastHost;
 
     public static Task<bool> Confirm(string title, string message, string ok = "تأكيد", bool danger = false, string cancel = "إلغاء")
     {
@@ -207,28 +206,11 @@ public static class Dialogs
         return tcs.Task;
     }
 
+    /// <summary>Kept for the many existing call sites: now goes through the notification center (toast + bell history).</summary>
     public static void Toast(string text, string kind = "ok")
     {
-        if (ToastHost == null) return;
-        string glyph = kind switch { "err" => "", "warn" => "", "info" => "", _ => "" };
-        string color = kind switch { "err" => "Bad", "warn" => "Warn", "info" => "Accent2", _ => "Good" };
-        var b = new Border
-        {
-            Background = Ui.B("Surface2"), BorderBrush = Ui.B(color), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(16, 12, 16, 12), Margin = new Thickness(0, 8, 0, 0), MaxWidth = 460,
-            Child = Ui.HStack(10, Ui.Icon(glyph, 16, color), Ui.Txt(text, 13, "Text", null, TextWrapping.Wrap)),
-            Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 24, ShadowDepth = 0, Opacity = 0.5 },
-        };
-        ToastHost.Children.Add(b);
-        Ui.FadeIn(b, 0, 20);
-        var t = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4.5) };
-        t.Tick += (_, _) =>
-        {
-            t.Stop();
-            var a = new DoubleAnimation(0, TimeSpan.FromMilliseconds(300));
-            a.Completed += (_, _) => ToastHost.Children.Remove(b);
-            b.BeginAnimation(UIElement.OpacityProperty, a);
-        };
-        t.Start();
+        string title = kind switch { "err" => "خطأ", "warn" => "تنبيه", "info" => "معلومة", _ => "تم" };
+        bool record = !(kind == "info" && text.StartsWith("جاري"));
+        Core.Notify.Push(kind, title, text, record);
     }
 }

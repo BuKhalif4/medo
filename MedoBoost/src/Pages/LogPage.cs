@@ -25,7 +25,10 @@ public class LogPage : PageBase
                 Ui.Btn("تحقق من التحديثات", "\uE895", () => _ = UpdateUi.CheckAndPrompt(false)),
                 Ui.Btn("فتح مجلد البيانات والنسخ الاحتياطية", "", () => Util.OpenFolder(Util.DataDir), "BtnGhost"))));
         var autoUpd = Ui.Check(Ui.Txt("تحقق من التحديثات تلقائياً عند التشغيل", 12.5, "TextDim"), Settings.Current.AutoUpdateCheck, v => { Settings.Current.AutoUpdateCheck = v; Settings.Save(); });
-        var head = Ui.VStack(Ui.Title("السجل وحول البرنامج"), about.M(0, 14, 0, 8), autoUpd.M(0, 0, 0, 14), Ui.Txt("سجل العمليات (مباشر)", 15, "Text", FontWeights.Bold).M(0, 0, 0, 8));
+        var tray = Ui.Check(Ui.Txt("زر الإغلاق ✕ يخفي البرنامج بجانب الساعة بدل ما يسكّره (للخروج: كليك يمين على الأيقونة ← خروج)", 12.5, "TextDim"), Settings.Current.MinimizeToTray, v => { Settings.Current.MinimizeToTray = v; Settings.Save(); });
+        var thermal = Ui.Check(Ui.Txt("نبّهني لما ترتفع حرارة المعالج أو الكرت", 12.5, "TextDim"), Settings.Current.ThermalAlerts, v => { Settings.Current.ThermalAlerts = v; Settings.Save(); });
+        var opts = Ui.Card(Ui.VStack(Ui.Txt("الإعدادات", 14, "Text", FontWeights.Bold).M(0, 0, 0, 10), autoUpd.M(0, 0, 0, 10), tray.M(0, 0, 0, 10), thermal), 16);
+        var head = Ui.VStack(Ui.Title("السجل وحول البرنامج"), about.M(0, 14, 0, 12), opts.M(0, 0, 0, 14), Ui.Txt("سجل العمليات (مباشر)", 15, "Text", FontWeights.Bold).M(0, 0, 0, 8));
         Children.Add(head);
 
         sv = Ui.Scroll(list);
