@@ -94,8 +94,8 @@ public class ToolsPage : PageBase
                 string state = d.Bad ? "خطر" : d.Warn ? "تحذير" : "سليم";
                 string color = d.Bad ? "Bad" : d.Warn ? "Warn" : "Good";
                 var info = new List<string>();
-                if (d.Temp != null) info.Add($"الحرارة {d.Temp:0}°C");
-                if (d.Wear != null) info.Add($"استهلاك العمر {d.Wear:0}%");
+                if (d.Temp != null) info.Add($"الحرارة {d.Temp:0} درجة");
+                if (d.Wear != null) info.Add($"استهلاك العمر {d.Wear:0} بالمئة");
                 if (d.Hours != null) info.Add($"ساعات التشغيل {d.Hours:N0} ({d.Hours / 24:N0} يوم)");
                 if ((d.Errors ?? 0) > 0) info.Add($"أخطاء {d.Errors:N0}");
                 var name = Ui.Txt($"{d.Name}  •  {Util.Size(d.Size)}  •  {d.Media}", 13, "Text", FontWeights.SemiBold).Ltr();

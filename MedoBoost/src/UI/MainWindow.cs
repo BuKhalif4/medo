@@ -214,6 +214,7 @@ public class MainWindow : Window
         var modal = new Grid { Visibility = Visibility.Collapsed };
         Dialogs.Host = modal;
         var toasts = NotifyUi.ToastHost;
+        NotifyUi.FollowBanner(UpdateUi.Banner);
         var notifLayer = NotifyUi.BuildLayer();
         Grid.SetColumnSpan(modal, 2); Grid.SetColumnSpan(toasts, 2); Grid.SetColumnSpan(notifLayer, 2);
         main.Children.Add(notifLayer);

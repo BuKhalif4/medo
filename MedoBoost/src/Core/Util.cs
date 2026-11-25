@@ -55,7 +55,7 @@ internal static class Util
 
     public static (int code, string output) PowerShell(string script, int timeoutMs = 120000)
     {
-        var enc = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
+        var enc = Convert.ToBase64String(Encoding.Unicode.GetBytes("$ProgressPreference='SilentlyContinue'; " + script));
         return Run("powershell.exe", $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {enc}", timeoutMs);
     }
 

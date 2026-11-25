@@ -43,8 +43,9 @@ public static class UpdateUi
 
     static void Show(Updater.Release r)
     {
-        var title = Ui.Txt($"نسخة جديدة متوفرة  {r.Tag}", 14, "Text", FontWeights.Bold);
-        var sub = Ui.Txt($"حجم التحديث {Util.Size(r.Size)} – البرنامج يتسكر ويرجع يفتح لحاله بعد التثبيت.", 12, "TextDim");
+        var title = Ui.HStack(8, Ui.Txt("نسخة جديدة متوفرة", 14, "Text", FontWeights.Bold),
+            Ui.Txt(r.Tag, 13, "Accent2", FontWeights.Bold).Ltr(), Ui.Txt(Util.Size(r.Size), 12, "TextMute").Ltr());
+        var sub = Ui.Txt("البرنامج يتسكر ويرجع يفتح لحاله بعد التثبيت.", 12, "TextDim");
         var texts = Ui.VStack(title, sub);
 
         var bar = Ui.Progress(); bar.Width = 190; bar.Visibility = Visibility.Collapsed;

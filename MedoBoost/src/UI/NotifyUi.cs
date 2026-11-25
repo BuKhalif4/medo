@@ -19,6 +19,14 @@ public static class NotifyUi
     static string Color(string kind) => kind switch { "err" => "Bad", "warn" => "Warn", "ok" => "Good", _ => "Accent2" };
     static string Glyph(string kind) => kind switch { "err" => "", "warn" => "", "ok" => "", _ => "" };
 
+    /// <summary>Keeps toasts below the update banner when it is showing.</summary>
+    public static void FollowBanner(FrameworkElement banner)
+    {
+        void Adjust() => ToastHost.Margin = new Thickness(24, 50 + (banner.IsVisible ? banner.ActualHeight + 14 : 0), 24, 24);
+        banner.SizeChanged += (_, _) => Adjust();
+        banner.IsVisibleChanged += (_, _) => Adjust();
+    }
+
     public static void Init()
     {
         Notify.Added += ShowToast;
@@ -81,6 +89,7 @@ public static class NotifyUi
         bool show = open ?? layer.Visibility != Visibility.Visible;
         if (show)
         {
+            ToastHost.Children.Clear();
             Rebuild();
             layer.Visibility = Visibility.Visible;
             layer.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(160)));
@@ -106,7 +115,7 @@ public static class NotifyUi
         var c = Color(it.Kind);
         var icon = new Border { Width = 30, Height = 30, CornerRadius = new CornerRadius(15), Background = Ui.Solid(ColorHex(c, 0x28)), Child = Ui.Icon(Glyph(it.Kind), 13, c), VerticalAlignment = VerticalAlignment.Top };
         var title = Ui.Txt(it.Title, 13, "Text", FontWeights.SemiBold);
-        var text = Ui.Txt(it.Text, 12, "TextDim", null, TextWrapping.Wrap).M(0, 2, 0, 0);
+        var text = Ui.Mixed(it.Text, 12, "TextDim"); text.Margin = new Thickness(0, 2, 0, 0);
         var time = Ui.Txt(it.Time.ToString("HH:mm"), 11, "TextMute").Ltr();
         var g = Ui.Cols(new[] { "40", "*", "Auto" }, icon, Ui.VStack(title, text), time);
         return new Border { Child = g, Padding = new Thickness(8, 10, 8, 10), CornerRadius = new CornerRadius(10), Margin = new Thickness(0, 1, 0, 1), Background = it.Read ? Brushes.Transparent : Ui.Solid("#14FFFFFF") };
@@ -125,7 +134,8 @@ public static class NotifyUi
         var c = Color(it.Kind);
         var bar = new Border { Width = 4, Background = Ui.B(c), CornerRadius = new CornerRadius(2), Margin = new Thickness(0, 0, 0, 0) };
         var icon = new Border { Width = 28, Height = 28, CornerRadius = new CornerRadius(14), Background = Ui.Solid(ColorHex(c, 0x28)), Child = Ui.Icon(Glyph(it.Kind), 12, c), VerticalAlignment = VerticalAlignment.Top };
-        var body = Ui.VStack(Ui.Txt(it.Title, 12.5, "TextDim", FontWeights.SemiBold), Ui.Txt(it.Text, 13, "Text", null, TextWrapping.Wrap).M(0, 2, 0, 0));
+        var msg = Ui.Mixed(it.Text, 13, "Text"); msg.Margin = new Thickness(0, 2, 0, 0);
+        var body = Ui.VStack(Ui.Mixed(it.Title, 12.5, "TextDim", FontWeights.SemiBold), msg);
         var g = Ui.Cols(new[] { "Auto", "36", "*" }, bar, icon.M(10, 0, 0, 0), body.M(10, 0, 4, 0));
         var b = new Border
         {

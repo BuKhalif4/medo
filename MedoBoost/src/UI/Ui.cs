@@ -41,6 +41,30 @@ public static class Ui
     /// <summary>Numbers/units must render left-to-right inside the Arabic UI ("88%" not "%88").</summary>
     public static T Ltr<T>(this T fe) where T : FrameworkElement { fe.FlowDirection = FlowDirection.LeftToRight; return fe; }
 
+    /// <summary>
+    /// Arabic text that contains numbers/units/English ("تم تنظيف 1.2 GB من الملفات"): Arabic words flow right-to-left,
+    /// each run of numbers/English stays left-to-right, so "1.2 GB" never turns into "GB 1.2". Handles line breaks.
+    /// </summary>
+    public static FrameworkElement Mixed(string text, double size = 13, string brush = "Text", FontWeight? weight = null)
+    {
+        var lines = (text ?? "").Split('\n');
+        var host = new StackPanel();
+        foreach (var line in lines)
+        {
+            var wp = new WrapPanel();
+            var latin = new List<string>();
+            void Flush() { if (latin.Count > 0) { var t = Txt(string.Join(" ", latin), size, brush, weight); t.FlowDirection = FlowDirection.LeftToRight; t.Margin = new Thickness(0, 0, 4, 0); wp.Children.Add(t); latin.Clear(); } }
+            foreach (var w in line.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (w.Any(ch => ch >= '\u0600' && ch <= '\u06FF')) { Flush(); var t = Txt(w, size, brush, weight); t.Margin = new Thickness(0, 0, 4, 0); wp.Children.Add(t); }
+                else latin.Add(w);
+            }
+            Flush();
+            host.Children.Add(wp);
+        }
+        return host;
+    }
+
     public static TextBlock Title(string text, double size = 26) => new()
     {
         Text = text, FontSize = size, FontWeight = FontWeights.Bold, Foreground = B("Text"),

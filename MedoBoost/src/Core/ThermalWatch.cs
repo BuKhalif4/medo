@@ -21,7 +21,7 @@ public static class ThermalWatch
         if (double.IsNaN(temp) || temp < limit) { hot = 0; return; }
         if (++hot < 6 || (DateTime.Now - last).TotalMinutes < 10) return;
         hot = 0; last = DateTime.Now;
-        Notify.Push("warn", $"حرارة {name} مرتفعة 🔥", $"{temp:0}°C منذ ثواني. افحص التهوية والمراوح، وإذا بتلعب خفّض الإعدادات أو حدّد الـ FPS.", balloon: true);
+        Notify.Push("warn", $"حرارة {name} مرتفعة 🔥", $"وصلت {temp:0} درجة مئوية منذ ثواني. افحص التهوية والمراوح، وإذا بتلعب خفّض الإعدادات.", balloon: true);
         Log.Warn($"حرارة {name}: {temp:0}°C");
     }
 }
