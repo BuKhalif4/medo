@@ -67,6 +67,12 @@ if (-not (Select-String -Path $cfg -Pattern 'sv_master1' -Quiet)) {
   Write-Host '> server.cfg updated (not listed publicly)'
 }
 
+# 4c) remove resources that no longer exist in the current cfx-server-data (harmless warnings)
+if (Test-Path $cfg) {
+  $lines = Get-Content $cfg | Where-Object { $_ -notmatch '^\s*ensure\s+(sessionmanager|hardcap)\s*$' }
+  Set-Content $cfg $lines -Encoding UTF8
+}
+
 # 5) ملفات التشغيل
 $bat = Join-Path $root 'start.bat'
 Set-Content $bat "@echo off`r`ncd /d `"$data`"`r`n`"$server\FXServer.exe`" +exec server.cfg`r`npause" -Encoding ASCII

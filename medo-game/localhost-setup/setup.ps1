@@ -62,6 +62,12 @@ if (-not (Test-Path $cfg)) {
   (Get-Content $cfg -Raw).Replace('PUT_YOUR_KEY_HERE', $key.Trim()) | Set-Content $cfg -Encoding UTF8
 }
 
+# 4c) remove resources that no longer exist in the current cfx-server-data (harmless warnings)
+if (Test-Path $cfg) {
+  $lines = Get-Content $cfg | Where-Object { $_ -notmatch '^\s*ensure\s+(sessionmanager|hardcap)\s*$' }
+  Set-Content $cfg $lines -Encoding UTF8
+}
+
 # 5) launch files
 $play = Join-Path $root 'play.bat'
 $playText = @"
