@@ -278,9 +278,7 @@ public static class Tweaks
             RegTweak("x_bing", 3, "إيقاف بحث الويب (Bing) في قائمة ابدأ",
                 "البحث في قائمة ابدأ يصير أسرع ويبحث بجهازك فقط.",
                 new[] { CU(@"Software\Policies\Microsoft\Windows\Explorer", "DisableSearchBoxSuggestions", 1), CU(@"Software\Microsoft\Windows\CurrentVersion\Search", "BingSearchEnabled", 0) }),
-            RegTweak("x_widgets", 3, "إيقاف الويدجت (Widgets / News)",
-                "يوقف لوحة الأخبار والطقس اللي تشتغل بالخلفية وتاكل رام.",
-                new[] { LM(@"SOFTWARE\Policies\Microsoft\Dsh", "AllowNewsAndInterests", 0) }),
+            WidgetsTweak(),
             RegTweak("x_copilot", 3, "إيقاف Copilot", "يوقف Windows Copilot.",
                 new[] { CU(@"Software\Policies\Microsoft\Windows\WindowsCopilot", "TurnOffWindowsCopilot", 1), LM(@"SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot", "TurnOffWindowsCopilot", 1) }),
             RegTweak("x_recall", 3, "إيقاف Recall (لقطات الشاشة بالذكاء الاصطناعي)", "يمنع Windows من حفظ لقطات لشاشتك (على أجهزة Copilot+).",
@@ -396,6 +394,33 @@ public static class Tweaks
             if (lines.All(l => string.IsNullOrWhiteSpace(l) || l.Trim().StartsWith("["))) File.Delete(f); else File.WriteAllLines(f, lines);
         }
         Log.Info(".wslconfig restored");
+    }
+
+    /// <summary>
+    /// Widgets: the machine-wide policy key is sometimes locked on Windows 11 (access denied), so we also use the
+    /// per-user taskbar switch. Either one counts as "off"; if the policy can't be written we still succeed with the user switch.
+    /// </summary>
+    static Tweak WidgetsTweak()
+    {
+        var policy = LM(@"SOFTWARE\Policies\Microsoft\Dsh", "AllowNewsAndInterests", 0);
+        var user = CU(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "TaskbarDa", 0, 1);
+        return new Tweak
+        {
+            Id = "x_widgets", Category = Categories[3], Name = "إيقاف الويدجت (Widgets / News)", Recommended = true,
+            Description = "يوقف لوحة الأخبار والطقس اللي تشتغل بالخلفية وتاكل رام.",
+            IsApplied = () => Reg.IsSet(user) || Reg.IsSet(policy),
+            Apply = () =>
+            {
+                bool ok = false; string err = "";
+                try { Reg.Apply(user); ok = true; } catch (Exception ex) { err = ex.Message; }
+                try { Reg.Apply(policy); ok = true; } catch (Exception ex) { Log.Warn("Widgets policy: " + ex.Message); if (err.Length == 0) err = ex.Message; }
+                if (!ok) throw new Exception(err);
+                // stop the running widgets host so the RAM is freed right away
+                foreach (var n in new[] { "Widgets", "WidgetService", "WebExperienceHostApp" })
+                    foreach (var p in System.Diagnostics.Process.GetProcessesByName(n)) { try { p.Kill(); } catch { } finally { p.Dispose(); } }
+            },
+            Revert = () => { try { Reg.Restore(user); } catch { } try { Reg.Restore(policy); } catch { } },
+        };
     }
 
     // ---------------- Services ----------------
