@@ -12,11 +12,19 @@ public static class UpdateUi
 {
     public static readonly Border Banner = new() { Visibility = Visibility.Collapsed, Margin = new Thickness(34, 0, 34, 14) };
     static bool busy;
+    static DateTime lastCheck = DateTime.MinValue;
+
+    /// <summary>Called when the window is brought back from the tray: re-check if the last check is old.</summary>
+    public static void CheckIfStale()
+    {
+        if (Settings.Current.AutoUpdateCheck && (DateTime.Now - lastCheck).TotalMinutes > 30) _ = CheckAndPrompt(true);
+    }
 
     public static async Task CheckAndPrompt(bool silent)
     {
         if (busy) return;
         busy = true;
+        lastCheck = DateTime.Now;
         try
         {
             if (!silent) Notify.Push("info", "التحديثات", "جاري التحقق من التحديثات...", record: false);

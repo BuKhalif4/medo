@@ -76,7 +76,8 @@ public partial class MainWindow : Window
             if (Settings.Current.AutoUpdateCheck && !SkipUpdateCheck)
             {
                 var t = new DispatcherTimer { Interval = TimeSpan.FromSeconds(6) };
-                t.Tick += async (_, _) => { t.Stop(); await UpdateUi.CheckAndPrompt(true); };
+                // first check 6 s after start, then every 2 hours (the app can stay open in the tray for days)
+                t.Tick += async (_, _) => { t.Interval = TimeSpan.FromHours(2); await UpdateUi.CheckAndPrompt(true); };
                 t.Start();
             }
             if (!SkipUpdateCheck)

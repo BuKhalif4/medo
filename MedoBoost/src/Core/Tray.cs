@@ -103,6 +103,7 @@ public static class Tray
         w.Show();
         if (w.WindowState == WindowState.Minimized) w.WindowState = WindowState.Normal;
         w.Activate();
+        UI.UpdateUi.CheckIfStale();
     }
 
     public static void Exit()
