@@ -9,6 +9,8 @@ namespace MedoBoost.Pages;
 public class TweaksPage : PageBase
 {
     readonly Dictionary<Tweak, ToggleButton> switches = new();
+    readonly Dictionary<Tweak, CheckBox> picks = new();
+    readonly TextBlock pickCount = Ui.Txt("", 12.5, "Accent2", FontWeights.SemiBold);
     readonly TextBlock summary = Ui.Txt("", 13, "TextDim");
     bool updating;
 
@@ -28,6 +30,12 @@ public class TweaksPage : PageBase
         enableAll.ToolTip = "يفعّل كل التويكات – بعدها طفّي اللي ما تبيه";
         var revertAll = Ui.Btn("إرجاع كل شي للأصل", "", async () => await RevertAll(), "BtnGhost");
 
+        var pickAll = Ui.Btn("تحديد الكل", null, () => { foreach (var c in picks.Values) c.IsChecked = true; }, "BtnGhost");
+        var pickRec = Ui.Btn("تحديد المنصوح به", null, () => { foreach (var (t, c) in picks) c.IsChecked = t.Recommended && t.Risk == Risk.Safe; }, "BtnGhost");
+        var pickNone = Ui.Btn("مسح التحديد", null, () => { foreach (var c in picks.Values) c.IsChecked = false; }, "BtnGhost");
+        var applySel = Ui.Btn("تطبيق المحدد", "\uE73E", async () => await ApplySelected());
+        foreach (var b in new[] { pickAll, pickRec, pickNone, applySel }) b.Padding = new Thickness(14, 7, 14, 7);
+
         var info = Ui.Card(Ui.Cols(new[] { "Auto", "*" }, Ui.Icon("", 22, "Good").M(0, 0, 12, 0),
             Ui.Txt("كل تويك يحفظ القيمة الأصلية قبل التعديل، وتقدر ترجعه بإطفاء المفتاح. ننصح بإنشاء نقطة استعادة قبل أول مرة. التويكات المعلّمة «منصوح» آمنة ومجربة.", 12.5, "TextDim", null, TextWrapping.Wrap)), 14);
         info.Background = Ui.Prime ? Ui.B("Surface2") : Ui.Solid("#1422C55E");
@@ -36,6 +44,8 @@ public class TweaksPage : PageBase
             Ui.Title("تسريع وتويكات"),
             Ui.Txt("تحسينات Windows للألعاب والأداء والشبكة والخصوصية – كل وحدة مشروحة وتقدر ترجعها.", 13, "TextDim").M(0, 4, 0, 14),
             Ui.Cols(new[] { "Auto", "Auto", "Auto", "Auto", "*", "Auto" }, applyRec, enableAll.M(10, 0, 0, 0), restore.M(10, 0, 0, 0), revertAll.M(10, 0, 0, 0), null, summary),
+            Ui.Txt("اختيار مخصص: ضع علامة على التويكات اللي تبيها (المربعات بجانب كل تويك) ثم اضغط «تطبيق المحدد» – غير المحدد ما ينلمس.", 12, "TextMute", null, TextWrapping.Wrap).M(0, 14, 0, 8),
+            Ui.HStack(8, pickAll, pickRec, pickNone, applySel, pickCount.M(10, 0, 0, 0)),
             info.M(0, 14, 0, 14));
         Children.Add(head);
 
@@ -70,7 +80,11 @@ public class TweaksPage : PageBase
         if (t.Recommended) title.Children.Add(Ui.Badge("منصوح", "Good", "#2222C55E"));
         if (t.Risk == Risk.Caution) title.Children.Add(Ui.Badge("انتبه", "Warn", "#22F59E0B"));
         if (t.NeedsRestart) title.Children.Add(Ui.Badge("يحتاج ريستارت", "Accent2", "#2206B6D4"));
-        var g = Ui.Cols(new[] { "*", "Auto" }, Ui.VStack(title, Ui.Txt(t.Description, 12, "TextDim", null, TextWrapping.Wrap).M(0, 3, 0, 0)).M(0, 0, 20, 0), sw);
+        var pick = Ui.Check(null, false, _ => UpdatePicks());
+        picks[t] = pick;
+        pick.VerticalAlignment = VerticalAlignment.Top; pick.Margin = new Thickness(0, 2, 14, 0);
+        pick.ToolTip = "حدد هذا التويك";
+        var g = Ui.Cols(new[] { "Auto", "*", "Auto" }, pick, Ui.VStack(title, Ui.Txt(t.Description, 12, "TextDim", null, TextWrapping.Wrap).M(0, 3, 0, 0)).M(0, 0, 20, 0), sw);
         g.Margin = new Thickness(0, 8, 0, 8);
         return g;
     }
@@ -131,6 +145,31 @@ public class TweaksPage : PageBase
         foreach (var t in todo)
         {
             try { await Task.Run(t.Apply); ok++; } catch (Exception ex) { Log.Error(t.Name + ": " + ex.Message); }
+        }
+        await RefreshStates();
+        Dialogs.Toast($"تم تطبيق {ok} تويك ✔ – أعد تشغيل الجهاز لأفضل نتيجة");
+    }
+
+    void UpdatePicks()
+    {
+        int n = picks.Values.Count(c => c.IsChecked == true);
+        pickCount.Text = n == 0 ? "" : $"محدد {n}";
+    }
+
+    async Task ApplySelected()
+    {
+        var chosen = picks.Where(kv => kv.Value.IsChecked == true).Select(kv => kv.Key).ToList();
+        if (chosen.Count == 0) { Dialogs.Toast("اختر تويكات أول (المربعات بجانب كل تويك)", "warn"); return; }
+        var todo = chosen.Where(t => switches[t].IsChecked != true).ToList();
+        if (todo.Count == 0) { Dialogs.Toast("كل التويكات المحددة مفعلة بالفعل 👌", "info"); return; }
+        var caution = todo.Where(t => t.Risk == Risk.Caution).Select(t => "• " + t.Name).ToList();
+        string msg = $"سيتم تطبيق {todo.Count} تويك محدد:\n" + string.Join("\n", todo.Select(t => "• " + t.Name)) + "\n\nغير المحدد ما ينلمس.";
+        if (caution.Count > 0) msg += "\n\nانتبه، هذول فيهم شي لازم تعرفه:\n" + string.Join("\n", caution);
+        if (!await Dialogs.Confirm("تطبيق المحدد", msg, "طبّق")) return;
+        int ok = 0;
+        foreach (var t in todo)
+        {
+            try { await Task.Run(t.Apply); ok++; } catch (Exception ex) { Log.Error(t.Name + ": " + ex); Dialogs.Toast(t.Name + ": " + ex.Message, "err"); }
         }
         await RefreshStates();
         Dialogs.Toast($"تم تطبيق {ok} تويك ✔ – أعد تشغيل الجهاز لأفضل نتيجة");

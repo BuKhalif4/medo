@@ -32,6 +32,12 @@ public static class L
         ("جاري إعادة تشغيل البرنامج...", "Restarting the app..."),
         ("جهّز للعب (Ctrl+Shift+G)", "Game Ready (Ctrl+Shift+G)"),
         ("نقطة الاستعادة جاهزة", "Restore point is ready"),
+        ("تطبيق المحدد", "Apply selected"), ("مسح التحديد", "Clear selection"), ("محدد {}", "Selected {}"), ("حدد هذا التويك", "Select this tweak"),
+        ("اختر تويكات أول (المربعات بجانب كل تويك)", "Pick some tweaks first (the boxes next to each tweak)"),
+        ("كل التويكات المحددة مفعلة بالفعل 👌", "All selected tweaks are already on 👌"),
+        ("اختيار مخصص: ضع علامة على التويكات اللي تبيها (المربعات بجانب كل تويك) ثم اضغط «تطبيق المحدد» – غير المحدد ما ينلمس.", "Custom pick: tick the tweaks you want (the boxes next to each one) then press “Apply selected” – anything not ticked is left alone."),
+        ("سيتم تطبيق {} تويك محدد:\n", "{} selected tweaks will be applied:\n"),
+        ("\n\nغير المحدد ما ينلمس.", "\n\nAnything not selected is left alone."),
         ("أنوية", "cores"), ("مسار", "threads"), ("منافذ", "slots"), ("من", "of"), ("تعريف", "driver"), ("مستخدم", "used"), ("متاح", "free"), ("ناشر غير معروف", "Unknown publisher"),
     };
 
