@@ -404,22 +404,39 @@ public static class Tweaks
     {
         var policy = LM(@"SOFTWARE\Policies\Microsoft\Dsh", "AllowNewsAndInterests", 0);
         var user = CU(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "TaskbarDa", 0, 1);
+        const string marker = "widgets|removed";
         return new Tweak
         {
             Id = "x_widgets", Category = Categories[3], Name = "إيقاف الويدجت (Widgets / News)", Recommended = true,
             Description = "يوقف لوحة الأخبار والطقس اللي تشتغل بالخلفية وتاكل رام.",
-            IsApplied = () => Reg.IsSet(user) || Reg.IsSet(policy),
+            IsApplied = () => Reg.IsSet(user) || Reg.IsSet(policy) || Backup.Has(marker),
             Apply = () =>
             {
-                bool ok = false; string err = "";
-                try { Reg.Apply(user); ok = true; } catch (Exception ex) { err = ex.Message; }
-                try { Reg.Apply(policy); ok = true; } catch (Exception ex) { Log.Warn("Widgets policy: " + ex.Message); if (err.Length == 0) err = ex.Message; }
-                if (!ok) throw new Exception(err);
-                // stop the running widgets host so the RAM is freed right away
+                bool ok = false;
+                var errs = new List<string>();
+                try { Reg.Apply(user); ok = true; } catch (Exception ex) { errs.Add("user: " + ex.Message); }
+                try { Reg.Apply(policy); ok = true; } catch (Exception ex) { errs.Add("policy: " + ex.Message); }
+                if (!ok)
+                {
+                    // Windows 11 can lock both registry switches. Last resort (what debloat tools do): remove the Widgets package.
+                    var (code, outp) = Util.PowerShell("Get-AppxPackage -AllUsers *WebExperience* | Remove-AppxPackage -AllUsers; if (Get-AppxPackage -AllUsers *WebExperience*) { 'STILL' } else { 'GONE' }", 180000);
+                    if (outp.Contains("GONE")) { Backup.Set(marker, new Backup.Entry { Existed = true, Kind = "String", Value = "removed" }); ok = true; Log.Ok("Widgets: package removed (registry switches were locked)"); }
+                    else errs.Add("package: " + outp.Trim());
+                }
+                if (!ok) { Log.Error("Widgets tweak failed → " + string.Join(" | ", errs)); throw new Exception(string.Join(" | ", errs)); }
                 foreach (var n in new[] { "Widgets", "WidgetService", "WebExperienceHostApp" })
-                    foreach (var p in System.Diagnostics.Process.GetProcessesByName(n)) { try { p.Kill(); } catch { } finally { p.Dispose(); } }
+                    foreach (var pr in System.Diagnostics.Process.GetProcessesByName(n)) { try { pr.Kill(); } catch { } finally { pr.Dispose(); } }
             },
-            Revert = () => { try { Reg.Restore(user); } catch { } try { Reg.Restore(policy); } catch { } },
+            Revert = () =>
+            {
+                try { Reg.Restore(user); } catch { }
+                try { Reg.Restore(policy); } catch { }
+                if (Backup.Has(marker))
+                {
+                    Util.PowerShell("Get-AppxPackage -AllUsers *WebExperience* | ForEach-Object { Add-AppxPackage -DisableDevelopmentMode -Register \"$($_.InstallLocation)\\AppxManifest.xml\" }; Add-AppxPackage -RegisterByFamilyName -MainPackage MicrosoftWindows.Client.WebExperience_cw5n1h2txyewy", 180000);
+                    Backup.Remove(marker);
+                }
+            },
         };
     }
 

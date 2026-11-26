@@ -96,7 +96,7 @@ public class TweaksPage : PageBase
         }
         catch (Exception ex)
         {
-            Log.Error(t.Name + ": " + ex.Message);
+            Log.Error(t.Name + ": " + ex);
             Dialogs.Toast(t.Name + ": " + ex.Message, "err");
             Set(sw, await Task.Run(() => SafeApplied(t)));
         }
