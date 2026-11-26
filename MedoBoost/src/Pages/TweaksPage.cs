@@ -92,6 +92,11 @@ public class TweaksPage : PageBase
     async Task Toggle(Tweak t, bool on)
     {
         if (updating) return;
+        // your own choice is remembered: switching a tweak off means "I don't want this", so bulk buttons leave it alone
+        var rej = Settings.Current.RejectedTweaks;
+        if (on) rej.Remove(t.Id); else if (!rej.Contains(t.Id)) rej.Add(t.Id);
+        Settings.Save();
+        if (!on && picks.TryGetValue(t, out var pc)) pc.IsChecked = false;
         var sw = switches[t];
         sw.IsEnabled = false;
         try
@@ -138,7 +143,7 @@ public class TweaksPage : PageBase
 
     async Task ApplyRecommended()
     {
-        var todo = Tweaks.All.Where(t => t.Recommended && t.Risk == Risk.Safe && switches[t].IsChecked != true).ToList();
+        var todo = Tweaks.All.Where(t => t.Recommended && t.Risk == Risk.Safe && switches[t].IsChecked != true && !Rej(t)).ToList();
         if (todo.Count == 0) { Dialogs.Toast("كل التويكات المنصوح بها مفعلة بالفعل 👌", "info"); return; }
         if (!await Dialogs.Confirm("تطبيق المنصوح به", $"سيتم تطبيق {todo.Count} تويك آمن:\n" + string.Join("\n", todo.Select(t => "• " + t.Name)) + "\n\nيفضل تعمل نقطة استعادة قبل.", "طبّق")) return;
         int ok = 0;
@@ -150,6 +155,8 @@ public class TweaksPage : PageBase
         Dialogs.Toast($"تم تطبيق {ok} تويك ✔ – أعد تشغيل الجهاز لأفضل نتيجة");
     }
 
+    static bool Rej(Tweak t) => Settings.Current.RejectedTweaks.Contains(t.Id);
+
     void UpdatePicks()
     {
         int n = picks.Values.Count(c => c.IsChecked == true);
@@ -160,7 +167,9 @@ public class TweaksPage : PageBase
     {
         var chosen = picks.Where(kv => kv.Value.IsChecked == true).Select(kv => kv.Key).ToList();
         if (chosen.Count == 0) { Dialogs.Toast("اختر تويكات أول (المربعات بجانب كل تويك)", "warn"); return; }
-        var todo = chosen.Where(t => switches[t].IsChecked != true).ToList();
+        var skipped = chosen.Count(t => Rej(t) && switches[t].IsChecked != true);
+        var todo = chosen.Where(t => switches[t].IsChecked != true && !Rej(t)).ToList();
+        if (skipped > 0) Dialogs.Toast($"تم تخطي {skipped} تويك طفيتها بنفسك (لتفعيلها استخدم مفتاحها)", "info");
         if (todo.Count == 0) { Dialogs.Toast("كل التويكات المحددة مفعلة بالفعل 👌", "info"); return; }
         var caution = todo.Where(t => t.Risk == Risk.Caution).Select(t => "• " + t.Name).ToList();
         string msg = $"سيتم تطبيق {todo.Count} تويك محدد:\n" + string.Join("\n", todo.Select(t => "• " + t.Name)) + "\n\nغير المحدد ما ينلمس.";
@@ -177,7 +186,7 @@ public class TweaksPage : PageBase
 
     async Task EnableAll(List<Tweak> tweaks)
     {
-        var todo = tweaks.Where(t => switches[t].IsChecked != true).ToList();
+        var todo = tweaks.Where(t => switches[t].IsChecked != true && !Rej(t)).ToList();
         if (todo.Count == 0) { Dialogs.Toast("كلها مفعلة بالفعل 👌", "info"); return; }
         var caution = todo.Where(t => t.Risk == Risk.Caution).Select(t => "• " + t.Name).ToList();
         string msg = $"سيتم تفعيل {todo.Count} تويك. بعدها تقدر تطفي أي واحد ما تبيه وبيرجع لأصله.";
@@ -197,6 +206,7 @@ public class TweaksPage : PageBase
         var on = Tweaks.All.Where(t => switches[t].IsChecked == true).ToList();
         if (on.Count == 0) { Dialogs.Toast("ما في تويكات مفعلة", "info"); return; }
         if (!await Dialogs.Confirm("إرجاع كل شي", $"سيتم إرجاع {on.Count} تويك لقيمها الأصلية.", "إرجاع", true)) return;
+        Settings.Current.RejectedTweaks.Clear(); Settings.Save();
         foreach (var t in on) { try { await Task.Run(t.Revert); } catch (Exception ex) { Log.Error(t.Name + ": " + ex.Message); } }
         await RefreshStates();
         Dialogs.Toast("تم إرجاع كل التويكات ✔");

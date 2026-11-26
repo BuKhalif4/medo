@@ -38,6 +38,7 @@ public static class L
         ("اختيار مخصص: ضع علامة على التويكات اللي تبيها (المربعات بجانب كل تويك) ثم اضغط «تطبيق المحدد» – غير المحدد ما ينلمس.", "Custom pick: tick the tweaks you want (the boxes next to each one) then press “Apply selected” – anything not ticked is left alone."),
         ("سيتم تطبيق {} تويك محدد:\n", "{} selected tweaks will be applied:\n"),
         ("\n\nغير المحدد ما ينلمس.", "\n\nAnything not selected is left alone."),
+        ("تم تخطي {} تويك طفيتها بنفسك (لتفعيلها استخدم مفتاحها)", "Skipped {} tweaks you turned off yourself (use their own switch to enable them)"),
         ("أنوية", "cores"), ("مسار", "threads"), ("منافذ", "slots"), ("من", "of"), ("تعريف", "driver"), ("مستخدم", "used"), ("متاح", "free"), ("ناشر غير معروف", "Unknown publisher"),
     };
 

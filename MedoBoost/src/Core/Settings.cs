@@ -29,6 +29,8 @@ public class AppSettings
     public string Language { get; set; } = "ar";          // ar | en
     public string Design { get; set; } = "prime";         // prime | classic
     public bool WelcomeDone { get; set; } = false;
+    /// <summary>Tweaks the user switched off by hand. Bulk buttons (apply selected / recommended / all / profile) skip them.</summary>
+    public List<string> RejectedTweaks { get; set; } = new();
     // Game Ready (what "جهّز للعب" does)
     public bool GameReadyClose { get; set; } = true;
     public bool GameReadyRam { get; set; } = true;

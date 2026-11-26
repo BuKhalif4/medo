@@ -189,7 +189,7 @@ public class FreshPage : PageBase
             }
             if (optTweaks.IsChecked == true)
             {
-                var list = Tweaks.All.Where(t => (t.Recommended && t.Risk == Risk.Safe) || ExtraProfileTweaks.Contains(t.Id)).ToList();
+                var list = Tweaks.All.Where(t => ((t.Recommended && t.Risk == Risk.Safe) || ExtraProfileTweaks.Contains(t.Id)) && !Settings.Current.RejectedTweaks.Contains(t.Id)).ToList();
                 Step($"تطبيق {list.Count} تويك...", "run");
                 var (applied, failed) = await Task.Run(() =>
                 {
