@@ -33,7 +33,7 @@ public class TweaksPage : PageBase
         var pickAll = Ui.Btn("تحديد الكل", null, () => { foreach (var c in picks.Values) c.IsChecked = true; }, "BtnGhost");
         var pickRec = Ui.Btn("تحديد المنصوح به", null, () => { foreach (var (t, c) in picks) c.IsChecked = t.Recommended && t.Risk == Risk.Safe; }, "BtnGhost");
         var pickNone = Ui.Btn("مسح التحديد", null, () => { foreach (var c in picks.Values) c.IsChecked = false; }, "BtnGhost");
-        var applySel = Ui.Btn("تطبيق المحدد", "\uE73E", async () => await ApplySelected());
+        var applySel = Ui.Btn("تطبيق", "\uE73E", async () => await ApplySelected());
         foreach (var b in new[] { pickAll, pickRec, pickNone, applySel }) b.Padding = new Thickness(14, 7, 14, 7);
 
         var info = Ui.Card(Ui.Cols(new[] { "Auto", "*" }, Ui.Icon("", 22, "Good").M(0, 0, 12, 0),
@@ -156,23 +156,30 @@ public class TweaksPage : PageBase
         pickCount.Text = n == 0 ? "" : $"محدد {n}";
     }
 
+    /// <summary>
+    /// Applies (again) every tweak that is switched ON plus every ticked one. Already-on tweaks are written again too,
+    /// so anything Windows put back (an update, a reboot) is fixed. Switched-off and unticked tweaks are left alone.
+    /// </summary>
     async Task ApplySelected()
     {
-        var chosen = picks.Where(kv => kv.Value.IsChecked == true).Select(kv => kv.Key).ToList();
+        var chosen = Tweaks.All.Where(t => switches[t].IsChecked == true || picks[t].IsChecked == true).ToList();
         if (chosen.Count == 0) { Dialogs.Toast("اختر تويكات أول (المربعات بجانب كل تويك)", "warn"); return; }
-        var todo = chosen.Where(t => switches[t].IsChecked != true).ToList();
-        if (todo.Count == 0) { Dialogs.Toast("كل التويكات المحددة مفعلة بالفعل 👌", "info"); return; }
-        var caution = todo.Where(t => t.Risk == Risk.Caution).Select(t => "• " + t.Name).ToList();
-        string msg = $"سيتم تطبيق {todo.Count} تويك محدد:\n" + string.Join("\n", todo.Select(t => "• " + t.Name)) + "\n\nغير المحدد ما ينلمس.";
+        var fresh = chosen.Where(t => switches[t].IsChecked != true).ToList();
+        var caution = fresh.Where(t => t.Risk == Risk.Caution).Select(t => "• " + t.Name).ToList();
+        string msg = $"سيتم تطبيق {chosen.Count} تويك: {chosen.Count - fresh.Count} مفعّل (يعاد تطبيقه) و {fresh.Count} جديد.";
+        if (fresh.Count > 0) msg += "\n\nالجديد:\n" + string.Join("\n", fresh.Select(t => "• " + t.Name));
+        msg += "\n\nالمطفي وغير المحدد ما ينلمس.";
         if (caution.Count > 0) msg += "\n\nانتبه، هذول فيهم شي لازم تعرفه:\n" + string.Join("\n", caution);
-        if (!await Dialogs.Confirm("تطبيق المحدد", msg, "طبّق")) return;
-        int ok = 0;
-        foreach (var t in todo)
+        if (!await Dialogs.Confirm("تطبيق", msg, "طبّق")) return;
+        int ok = 0; var failed = new List<string>();
+        foreach (var t in chosen)
         {
-            try { await Task.Run(t.Apply); ok++; } catch (Exception ex) { Log.Error(t.Name + ": " + ex); Dialogs.Toast(t.Name + ": " + ex.Message, "err"); }
+            try { await Task.Run(t.Apply); ok++; } catch (Exception ex) { Log.Error(t.Name + ": " + ex); failed.Add(t.Name); }
         }
         await RefreshStates();
-        Dialogs.Toast($"تم تطبيق {ok} تويك ✔ – أعد تشغيل الجهاز لأفضل نتيجة");
+        var notOn = chosen.Where(t => switches[t].IsChecked != true).Select(t => t.Name).Except(failed).ToList();
+        if (failed.Count + notOn.Count == 0) Dialogs.Toast($"تم تطبيق {ok} تويك ✔ – أعد تشغيل الجهاز لأفضل نتيجة");
+        else Dialogs.Toast($"تم تطبيق {ok - notOn.Count} من {chosen.Count}. ما انطبق: " + string.Join("، ", failed.Concat(notOn)), "warn");
     }
 
     async Task EnableAll(List<Tweak> tweaks)
