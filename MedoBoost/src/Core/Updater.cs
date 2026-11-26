@@ -32,9 +32,23 @@ public static class Updater
         return h;
     }
 
-    /// <summary>Returns the newer release, or null if this is the latest (or GitHub can't be reached).</summary>
+    public static string LastError { get; private set; } = "";
+
+    static Release Make(string tag, string notes, string url, long size)
+    {
+        if (!Version.TryParse(tag.TrimStart('v', 'V'), out var v)) return null;
+        v = new Version(v.Major, v.Minor, Math.Max(0, v.Build));
+        return v <= Current ? null : new Release(v, tag, notes, url, size);
+    }
+
+    /// <summary>
+    /// Returns the newer release, or null if this is the latest. If GitHub can't be reached at all, LastError says why
+    /// (so "you're on the latest" is never shown for a failed check). Tries the API first, then the plain release page,
+    /// which still works when the API is rate-limited or blocked.
+    /// </summary>
     public static async Task<Release> CheckAsync()
     {
+        LastError = "";
         try
         {
             using var h = Http();
@@ -42,18 +56,31 @@ public static class Updater
             using var doc = JsonDocument.Parse(await h.GetStringAsync(Api));
             var root = doc.RootElement;
             var tag = root.GetProperty("tag_name").GetString() ?? "";
-            if (!Version.TryParse(tag.TrimStart('v', 'V'), out var v)) return null;
-            v = new Version(v.Major, v.Minor, Math.Max(0, v.Build));
-            if (v <= Current) return null;
             foreach (var a in root.GetProperty("assets").EnumerateArray())
             {
                 var an = a.GetProperty("name").GetString();
                 if (!string.Equals(an, "KHABoost.exe", StringComparison.OrdinalIgnoreCase) && !string.Equals(an, "MedoBoost.exe", StringComparison.OrdinalIgnoreCase)) continue;
                 var notes = root.TryGetProperty("body", out var b) ? b.GetString() ?? "" : "";
-                return new Release(v, tag, notes, a.GetProperty("browser_download_url").GetString(), a.GetProperty("size").GetInt64());
+                return Make(tag, notes, a.GetProperty("browser_download_url").GetString(), a.GetProperty("size").GetInt64());
             }
+            return null;
         }
-        catch (Exception ex) { Log.Warn("Update check: " + ex.Message); }
+        catch (Exception ex) { Log.Warn("Update check (API): " + ex.Message); LastError = ex.Message; }
+
+        try
+        {
+            using var handler = new HttpClientHandler { AllowAutoRedirect = false };
+            using var h = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(30) };
+            h.DefaultRequestHeaders.UserAgent.ParseAdd("KHABoost-Updater");
+            using var resp = await h.GetAsync("https://github.com/BuKhalif4/medo/releases/latest");
+            var loc = resp.Headers.Location?.ToString() ?? "";
+            int k = loc.LastIndexOf("/tag/", StringComparison.Ordinal);
+            if (k < 0) throw new Exception("no release page");
+            var tag = loc[(k + 5)..];
+            LastError = "";
+            return Make(tag, "", $"https://github.com/BuKhalif4/medo/releases/download/{tag}/KHABoost.exe", 0);
+        }
+        catch (Exception ex) { Log.Warn("Update check (page): " + ex.Message); if (LastError.Length == 0) LastError = ex.Message; }
         return null;
     }
 
@@ -87,14 +114,29 @@ public static class Updater
         var script = Path.Combine(dir, "update.cmd");
         int pid = Environment.ProcessId;
         // wait for KHA Boost to close, keep the old exe as a backup, put the new one in place, start it
+        var ulog = Path.Combine(dir, "update.log");
         File.WriteAllText(script, $"""
             @echo off
             :wait
             tasklist /FI "PID eq {pid}" 2>nul | find "{pid}" >nul && (timeout /t 1 /nobreak >nul & goto wait)
+            echo [%date% %time%] swapping >> "{ulog}"
             copy /y "{exe}" "{backup}" >nul
-            copy /y "{tmp}" "{exe}" >nul || (start "" "{exe}" & exit /b 1)
+            set /a n=0
+            :retry
+            copy /y "{tmp}" "{exe}" >nul 2>>"{ulog}" && goto ok
+            set /a n+=1
+            if %n% GEQ 20 goto fail
+            timeout /t 1 /nobreak >nul
+            goto retry
+            :ok
+            echo [%date% %time%] updated >> "{ulog}"
             del "{tmp}" >nul 2>&1
             start "" "{exe}"
+            exit /b 0
+            :fail
+            echo [%date% %time%] FAILED to replace the exe (is the folder read-only?) >> "{ulog}"
+            start "" "{exe}"
+            exit /b 1
             """);
         Log.Ok($"تحديث: تم تنزيل {r.Tag} – إعادة التشغيل للتثبيت (النسخة القديمة محفوظة: {backup})");
         Process.Start(new ProcessStartInfo("cmd.exe", $"/c \"{script}\"") { CreateNoWindow = true, UseShellExecute = false, WindowStyle = ProcessWindowStyle.Hidden });

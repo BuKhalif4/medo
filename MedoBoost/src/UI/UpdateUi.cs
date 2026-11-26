@@ -31,7 +31,11 @@ public static class UpdateUi
             var r = await Updater.CheckAsync();
             if (r == null)
             {
-                if (!silent) Notify.Push("ok", "التحديثات", $"عندك آخر نسخة ({Updater.CurrentText}) 👌");
+                if (!silent)
+                {
+                    if (Updater.LastError.Length > 0) Notify.Push("err", "التحديثات", "تعذر الوصول إلى GitHub: " + Updater.LastError);
+                    else Notify.Push("ok", "التحديثات", $"عندك آخر نسخة ({Updater.CurrentText}) 👌");
+                }
                 return;
             }
             if (silent && Settings.Current.DismissedUpdateTag == r.Tag) return;
@@ -52,7 +56,7 @@ public static class UpdateUi
     static void Show(Updater.Release r)
     {
         var title = Ui.HStack(8, Ui.Txt("نسخة جديدة متوفرة", 14, "Text", FontWeights.Bold),
-            Ui.Txt(r.Tag, 13, "Accent2", FontWeights.Bold).Ltr(), Ui.Txt(Util.Size(r.Size), 12, "TextMute").Ltr());
+            Ui.Txt(r.Tag, 13, "Accent2", FontWeights.Bold).Ltr(), Ui.Txt(r.Size > 0 ? Util.Size(r.Size) : "", 12, "TextMute").Ltr());
         var sub = Ui.Txt("البرنامج يتسكر ويرجع يفتح لحاله بعد التثبيت.", 12, "TextDim");
         var texts = Ui.VStack(title, sub);
 
