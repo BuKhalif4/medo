@@ -104,7 +104,7 @@ public static class UpdateUi
         };
 
         Banner.Child = host;
-        Banner.Background = Ui.Prime ? Ui.B("Surface2") : Ui.Solid("#2A7C3AED");
+        Banner.Background = Ui.Solid("#2A7C3AED");
         Banner.BorderBrush = Ui.B("Accent"); Banner.BorderThickness = new Thickness(1);
         Banner.CornerRadius = Ui.Cr(14); Banner.Padding = new Thickness(14, 12, 14, 12);
         Banner.Visibility = Visibility.Visible;

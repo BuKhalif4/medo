@@ -39,6 +39,5 @@
     <EmbeddedResource Include="Assets\logo.png" LogicalName="logo.png" />
     <EmbeddedResource Include="Assets\logo.ico" LogicalName="logo.ico" />
     <EmbeddedResource Include="Theme.xaml" LogicalName="Theme.xaml" />
-    <EmbeddedResource Include="ThemePrime.xaml" LogicalName="ThemePrime.xaml" />
   </ItemGroup>
 </Project>

@@ -41,11 +41,10 @@ public class LogPage : PageBase
             return Ui.Cols(new[] { "130", "*" }, Ui.Txt(label, 12.5, "TextDim"), wp);
         }
         var langRow = Choice("اللغة", new[] { "ar", "en" }, new[] { "العربية", "English" }, Settings.Current.Language, v => { Settings.Current.Language = v; Settings.Save(); Notify.Push("info", "اللغة", "جاري إعادة تشغيل البرنامج..."); Program.Restart(); });
-        var designRow = Choice("التصميم", new[] { "prime", "classic" }, new[] { "Prime", "Classic" }, Settings.Current.Design, v => { Settings.Current.Design = v; Settings.Save(); Notify.Push("info", "التصميم", "جاري إعادة تشغيل البرنامج..."); Program.Restart(); });
         var intro = Ui.Btn("عرض شاشة الترحيب", "\uE768", () => MainWindow.Instance.ShowWelcome(), "BtnGhost");
         intro.HorizontalAlignment = HorizontalAlignment.Left;
-        var opts = Ui.Card(Ui.VStack(Ui.Txt("الإعدادات", 14, "Text", FontWeights.Bold).M(0, 0, 0, 12), langRow.M(0, 0, 0, 6), designRow.M(0, 0, 0, 6),
-            Ui.Txt("تغيير اللغة أو التصميم يعيد تشغيل البرنامج تلقائياً.", 11.5, "TextMute").M(0, 0, 0, 12),
+        var opts = Ui.Card(Ui.VStack(Ui.Txt("الإعدادات", 14, "Text", FontWeights.Bold).M(0, 0, 0, 12), langRow.M(0, 0, 0, 6),
+            Ui.Txt("تغيير اللغة يعيد تشغيل البرنامج تلقائياً.", 11.5, "TextMute").M(0, 0, 0, 12),
             autoUpd.M(0, 0, 0, 10), tray.M(0, 0, 0, 10), thermal.M(0, 0, 0, 12), intro), 16);
         var head = Ui.VStack(Ui.Title("السجل وحول البرنامج"), about.M(0, 14, 0, 12), opts.M(0, 0, 0, 14), Ui.Txt("سجل العمليات (مباشر)", 15, "Text", FontWeights.Bold).M(0, 0, 0, 8));
         Children.Add(head);

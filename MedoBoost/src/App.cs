@@ -44,7 +44,6 @@ public static class Program
         AppDomain.CurrentDomain.UnhandledException += (_, e) => Log.Error("Unhandled: " + e.ExceptionObject);
         Settings.Load();
         if (selfTest && args.Length > 2) Settings.Current.Language = args[2];
-        if (selfTest && args.Length > 3) Settings.Current.Design = args[3];
         L.InstallHook();
         Log.Info("KHA Boost started");
 
