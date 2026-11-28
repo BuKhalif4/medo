@@ -19,6 +19,8 @@ public class OverlayWindow : Window
     readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromMilliseconds(500) };
     readonly Dictionary<string, TextBlock> values = new();
     readonly Dictionary<string, FrameworkElement> cells = new();
+    readonly Dictionary<string, TextBlock> labels = new();
+    readonly Dictionary<string, string> baseColors = new();
     string fgName = ""; int fgPid;
 
     public OverlayWindow()
@@ -75,23 +77,52 @@ public class OverlayWindow : Window
         var sp = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 1, 8, 1) };
         if (key == "ft" || key == "clock") sp.Children.Add(v); else { sp.Children.Add(l); l.Margin = new Thickness(0, 2, 5, 0); sp.Children.Add(v); }
         if (key == "ft") sp.Children.Add(l);
-        values[key] = v; cells[key] = sp;
+        values[key] = v; cells[key] = sp; labels[key] = l; baseColors[key] = color;
         items.Children.Add(sp);
     }
 
     public void ApplySettings()
     {
         var s = Settings.Current;
-        cells["fps"].Visibility = s.ShowFps ? Visibility.Visible : Visibility.Collapsed;
-        cells["ft"].Visibility = s.ShowFrameTime ? Visibility.Visible : Visibility.Collapsed;
-        cells["cpu"].Visibility = s.ShowCpu ? Visibility.Visible : Visibility.Collapsed;
-        cells["ctemp"].Visibility = s.ShowCpuTemp ? Visibility.Visible : Visibility.Collapsed;
-        cells["gpu"].Visibility = s.ShowGpu ? Visibility.Visible : Visibility.Collapsed;
-        cells["gtemp"].Visibility = s.ShowGpuTemp ? Visibility.Visible : Visibility.Collapsed;
-        cells["vram"].Visibility = s.ShowVram ? Visibility.Visible : Visibility.Collapsed;
-        cells["ram"].Visibility = s.ShowRam ? Visibility.Visible : Visibility.Collapsed;
-        cells["clock"].Visibility = s.ShowClock ? Visibility.Visible : Visibility.Collapsed;
-        items.Orientation = s.OverlayHorizontal ? Orientation.Horizontal : Orientation.Vertical;
+        string style = s.OverlayStyle ?? "full";
+        // which cells show: minimal / pro are fixed sets, the others follow the check boxes
+        var shown = style switch
+        {
+            "minimal" => new HashSet<string> { "fps" },
+            "pro" => new HashSet<string> { "fps", "ft", "cpu", "gpu", "ctemp", "gtemp" },
+            _ => new HashSet<string>(new[]
+            {
+                s.ShowFps ? "fps" : null, s.ShowFrameTime ? "ft" : null, s.ShowCpu ? "cpu" : null, s.ShowCpuTemp ? "ctemp" : null,
+                s.ShowGpu ? "gpu" : null, s.ShowGpuTemp ? "gtemp" : null, s.ShowVram ? "vram" : null, s.ShowRam ? "ram" : null, s.ShowClock ? "clock" : null,
+            }.Where(x => x != null)),
+        };
+        foreach (var kv in cells) kv.Value.Visibility = shown.Contains(kv.Key) ? Visibility.Visible : Visibility.Collapsed;
+
+        // accent colour: theme colour unless the user picked one (custom / neon)
+        Color? accent = null;
+        if ((style is "custom" or "neon") && !string.IsNullOrEmpty(s.OverlayAccent))
+        {
+            try { accent = Ui.C(s.OverlayAccent); } catch (FormatException) { accent = null; }
+        }
+        if (style == "neon" && accent == null) accent = Ui.C("#FF22D3EE");
+        foreach (var kv in labels)
+            kv.Value.Foreground = new SolidColorBrush(accent != null && kv.Key is "fps" or "cpu" or "gpu" ? accent.Value : Ui.C(baseColors[kv.Key]));
+
+        bool bg = style != "minimal" && (style != "custom" || s.OverlayBackground);
+        panel.Background = bg ? new SolidColorBrush(Color.FromArgb(style == "neon" ? (byte)0xB0 : (byte)0xCC, 0x0A, 0x0A, 0x14)) : Brushes.Transparent;
+        panel.BorderThickness = new Thickness(bg ? 1 : 0);
+        panel.BorderBrush = new SolidColorBrush(accent != null ? Color.FromArgb(style == "neon" ? (byte)0xFF : (byte)0x99, accent.Value.R, accent.Value.G, accent.Value.B) : Color.FromArgb(0x66, 0x8B, 0x5C, 0xF6));
+        panel.CornerRadius = new CornerRadius(style == "pro" ? 4 : 10);
+        panel.Padding = style == "minimal" ? new Thickness(4, 2, 4, 2) : style == "pro" ? new Thickness(8, 3, 8, 3) : new Thickness(10, 6, 10, 6);
+        // glow for neon, a dark outline-shadow when there is no background so the text stays readable over the game
+        panel.Effect = style == "neon" && accent != null
+            ? new System.Windows.Media.Effects.DropShadowEffect { Color = accent.Value, BlurRadius = 18, ShadowDepth = 0, Opacity = 0.85 }
+            : !bg ? new System.Windows.Media.Effects.DropShadowEffect { Color = Colors.Black, BlurRadius = 6, ShadowDepth = 1, Opacity = 1 }
+            : null;
+        values["fps"].FontSize = style == "minimal" ? 26 : 17;
+        values["fps"].FontFamily = style == "pro" ? new FontFamily("Consolas") : new FontFamily("Segoe UI");
+
+        items.Orientation = s.OverlayHorizontal && style != "minimal" ? Orientation.Horizontal : Orientation.Vertical;
         items.MaxWidth = s.OverlayHorizontal ? 900 : 200;
         panel.Opacity = s.OverlayOpacity;
         panel.LayoutTransform = new ScaleTransform(s.OverlayScale, s.OverlayScale);

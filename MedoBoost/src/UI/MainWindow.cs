@@ -55,6 +55,7 @@ public partial class MainWindow : Window
 
         factories["home"] = () => new DashboardPage();
         factories["game"] = () => new GameReadyPage();
+        factories["games"] = () => new GamesPage();
         factories["fresh"] = () => new FreshPage();
         factories["clean"] = () => new CleanerPage();
         factories["apps"] = () => new ProcessesPage();
@@ -169,6 +170,7 @@ public partial class MainWindow : Window
         }
         Nav("home", "", "الرئيسية");
         Nav("game", "\uE768", "جهّز للعب");
+        Nav("games", "\uE7FC", "ألعابي");
         Nav("fresh", "\uE895", "تنظيف من الصفر");
         Nav("clean", "", "التنظيف العميق");
         Nav("apps", "", "البرامج والرامات");

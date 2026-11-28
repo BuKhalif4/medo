@@ -48,7 +48,7 @@ public static class L
     {
         if (ready) return;
         ready = true;
-        foreach (var (ar, en) in LangData.Pairs.Concat(Extra).Concat(LangSessions.Pairs))
+        foreach (var (ar, en) in LangData.Pairs.Concat(Extra).Concat(LangSessions.Pairs).Concat(LangGames.Pairs))
         {
             if (!ar.Contains("{}")) { exact[ar] = en; if (ar.Trim().Length >= 8) frags.Add((ar, en)); continue; }
             var parts = ar.Split("{}");

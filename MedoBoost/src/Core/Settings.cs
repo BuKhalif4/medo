@@ -18,6 +18,9 @@ public class AppSettings
     public bool ShowRam { get; set; } = true;
     public bool ShowVram { get; set; } = false;
     public bool ShowClock { get; set; } = false;
+    public string OverlayStyle { get; set; } = "full";   // full | minimal | pro | neon | custom
+    public string OverlayAccent { get; set; } = "";      // "" = theme colour, else #RRGGBB (custom / neon)
+    public bool OverlayBackground { get; set; } = true;
     public int BenchmarkSeconds { get; set; } = 60;
     public List<string> CleanerUnchecked { get; set; } = new();
     public List<string> CleanerChecked { get; set; } = new();

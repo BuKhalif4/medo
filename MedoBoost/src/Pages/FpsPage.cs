@@ -74,9 +74,19 @@ public class FpsPage : PageBase
         Metric("RAM", s.ShowRam, v => s.ShowRam = v);
         Metric("الساعة", s.ShowClock, v => s.ShowClock = v);
 
+        string[] styleIds = { "full", "minimal", "pro", "neon", "custom" };
+        string[] accentHex = { "#FF22D3EE", "#FF8B5CF6", "#FF22C55E", "#FFFF8A2E", "#FFEC4899", "#FFEF4444" };
+        int styleIdx = Math.Max(0, Array.IndexOf(styleIds, s.OverlayStyle));
+        int accentIdx = Array.IndexOf(accentHex, s.OverlayAccent);
         var overlayCard = Ui.Card(Ui.VStack(
             Ui.Cols(new[] { "*", "Auto" }, Ui.VStack(Ui.Txt("أوفرلاي فوق الشاشة", 15, "Text", FontWeights.Bold), Ui.Txt("اختصار Ctrl+Shift+F – يظهر فوق الألعاب بوضع Borderless أو Windowed", 12, "TextDim", null, TextWrapping.Wrap).M(0, 2, 12, 0)), overlaySwitch),
             Ui.Sep(),
+            Ui.Txt("نمط الأوفرلاي", 12.5, "TextDim").M(0, 0, 0, 6),
+            Pills(new[] { "كامل", "بسيط (FPS فقط)", "احترافي", "نيون", "مخصص" }, styleIdx, i => { s.OverlayStyle = styleIds[i]; Changed(); }),
+            Ui.Txt("«مخصص» و«نيون»: اختر اللون وبعدين العناصر من الخيارات تحت.", 11.5, "TextMute").M(0, 6, 0, 0),
+            Ui.Txt("لون الأوفرلاي", 12.5, "TextDim").M(0, 8, 0, 6),
+            Pills(new[] { "سماوي", "بنفسجي", "أخضر", "برتقالي", "وردي", "أحمر" }, accentIdx < 0 ? 0 : accentIdx, i => { s.OverlayAccent = accentHex[i]; Changed(); }),
+            Ui.Check(Ui.Txt("خلفية داكنة خلف الأوفرلاي (للنمط المخصص)", 12.5, "TextDim"), s.OverlayBackground, v => { s.OverlayBackground = v; Changed(); }).M(0, 10, 0, 10),
             Ui.Txt("المكان", 12.5, "TextDim").M(0, 0, 0, 6),
             Pills(new[] { "فوق يسار", "فوق يمين", "تحت يسار", "تحت يمين" }, s.OverlayCorner, i => { s.OverlayCorner = i; Changed(); }),
             Ui.Txt("الشكل", 12.5, "TextDim").M(0, 8, 0, 6),

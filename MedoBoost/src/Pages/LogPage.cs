@@ -19,7 +19,7 @@ public class LogPage : PageBase
         var about = Ui.Card(Ui.VStack(
             Ui.HStack(14, new Image { Source = Ui.Logo(), Width = 56, Height = 56 },
                 Ui.VStack(Ui.GradText("KHA Boost", 24), Ui.Txt($"نسخة {Updater.CurrentText.TrimStart('v')} – برنامج تسريع وتنظيف ومراقبة، مصنوع خصيصاً لك", 12.5, "TextDim"))),
-            Ui.Txt("• البرنامج ما يرسل أي بيانات. الاتصال الوحيد: يتحقق من التحديثات على صفحة المشروع في GitHub (BuKhalif4/medo).\n• كل ملف ينحذف ينكتب في «deleted-files» وكل تعديل ينحفظ أصله في backup.json عشان ترجعه.\n• ما يلمس ملفاتك الشخصية أو كلمات السر أو الألعاب أو ملفات الحفظ.\n• الحساسات من مكتبة LibreHardwareMonitor المفتوحة المصدر، وعداد FPS من أحداث Windows (ETW) بدون حقن.", 12.5, "TextDim", null, TextWrapping.Wrap).M(0, 14, 0, 14),
+            Ui.Txt("• البرنامج ما يرسل أي بيانات عنك. الاتصال: التحديثات من صفحة المشروع في GitHub (BuKhalif4/medo)، وفحص متطلبات اللعبة من متجر Steam (فقط لما تضغط «هل يشغّلها جهازي؟»).\n• كل ملف ينحذف ينكتب في «deleted-files» وكل تعديل ينحفظ أصله في backup.json عشان ترجعه.\n• ما يلمس ملفاتك الشخصية أو كلمات السر أو الألعاب أو ملفات الحفظ.\n• الحساسات من مكتبة LibreHardwareMonitor المفتوحة المصدر، وعداد FPS من أحداث Windows (ETW) بدون حقن.", 12.5, "TextDim", null, TextWrapping.Wrap).M(0, 14, 0, 14),
             Ui.HStack(10,
                 Ui.Btn("فتح مجلد السجلات", "", () => Util.OpenFolder(Path.Combine(Util.DataDir, "logs")), "BtnGhost"),
                 Ui.Btn("تحقق من التحديثات", "\uE895", () => _ = UpdateUi.CheckAndPrompt(false)),

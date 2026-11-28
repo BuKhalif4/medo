@@ -141,6 +141,14 @@ public static class GameMode
         Log.Ok("انتهى وضع اللعب – رجعت الإعدادات كلها");
     }
 
+    /// <summary>Game mode was started by hand/launcher: bind it to the game's process so it ends when the game closes.</summary>
+    public static void AttachGame(int pid, string name)
+    {
+        if (!State.Active || State.GamePid != 0) return;
+        State.GamePid = pid; State.GameName = name;
+        Save();
+    }
+
     public static async Task ToggleAsync()
     {
         if (busy) return;
