@@ -19,6 +19,7 @@ public partial class MainWindow
     {
         ("home", "الرئيسية"), ("game", "جهّز"), ("fresh", "من الصفر"), ("clean", "تنظيف"), ("apps", "البرامج"), ("tweaks", "تسريع"),
         ("startup", "بدء"), ("fps", "FPS"), ("security", "الحماية"), ("uninstall", "إلغاء تثبيت"), ("tools", "أدوات"), ("log", "حول"),
+        ("games", "ألعابي"), ("sessions", "جلسات"), ("prayer", "الصلاة"),   // F13-F15: added last so F1-F12 keep their places
     };
 
     readonly Dictionary<string, TextBlock> ticker = new();
@@ -28,7 +29,7 @@ public partial class MainWindow
     void OnFKey(object sender, KeyEventArgs e)
     {
         var k = e.Key == Key.System ? e.SystemKey : e.Key;
-        if (k >= Key.F1 && k <= Key.F12 && Ui.Prime)
+        if (k >= Key.F1 && k <= Key.F15 && Ui.Prime)
         {
             int i = k - Key.F1;
             if (i < Keys.Length) { Navigate(Keys[i].id); e.Handled = true; }
@@ -127,7 +128,7 @@ public partial class MainWindow
         root.Children.Add(body);
 
         // ---------------- function keys ----------------
-        var keys = new UniformGrid { Columns = Keys.Length, Margin = new Thickness(14, 12, 14, 12) };
+        var keys = new UniformGrid { Columns = (Keys.Length + 1) / 2, Margin = new Thickness(14, 12, 14, 12) };   // two rows of keys
         for (int i = 0; i < Keys.Length; i++)
         {
             var (id, label) = Keys[i];

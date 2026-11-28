@@ -41,12 +41,12 @@ public sealed class FpsMonitor : IDisposable
     // Play-session capture (SessionRecorder): every frame time of one process + stutter counters per window
     List<double> sessFrames;
     int sessPid, sessStutters;
-    double sessMaxMs;
+    double sessMaxMs, sessEma;
     public const double StutterMs = 50;
 
     public void BeginSession(int pid)
     {
-        lock (gate) { sessPid = pid; sessFrames = new List<double>(1 << 16); sessStutters = 0; sessMaxMs = 0; }
+        lock (gate) { sessPid = pid; sessFrames = new List<double>(1 << 16); sessStutters = 0; sessMaxMs = 0; sessEma = 0; }
     }
 
     public List<double> EndSession()
@@ -116,7 +116,9 @@ public sealed class FpsMonitor : IDisposable
                     if (sessFrames != null && pid == sessPid)
                     {
                         sessFrames.Add(ft);
-                        if (ft >= StutterMs) sessStutters++;
+                        // stutter: at least 50 ms AND 2.5x the session's usual frame time (a steady 20 FPS game is slow, not stuttering)
+                        if (ft >= StutterMs && sessEma > 0 && ft >= 2.5 * sessEma) sessStutters++;
+                        sessEma = sessEma == 0 ? ft : sessEma * 0.98 + ft * 0.02;
                         if (ft > sessMaxMs) sessMaxMs = ft;
                     }
                 }

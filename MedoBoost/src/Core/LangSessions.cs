@@ -24,7 +24,7 @@ internal static class LangSessions
         ("تحذف جلسة {} بتاريخ {}؟", "Delete the {} session from {}?"), ("تعذر حذف الملف", "Could not delete the file"),
         // diagnosis sentences
         ("الجلسة سلسة: ما فيها توقفات ملحوظة والحركة متساوية.", "A smooth session: no noticeable stutters and the motion was even."),
-        ("حصل {} توقف (إطار أطول من 50 ms)، وأطولها {} ms.", "{} stutters happened (frames longer than 50 ms); the longest was {} ms."),
+        ("حصل {} توقف (إطار أطول من 50 ms وأطول بكثير من المعتاد)، وأطولها {} ms.", "{} stutters happened (frames over 50 ms and far longer than usual); the longest was {} ms."),
         ("الـ 1% Low ({} FPS) أقل بكثير من المتوسط ({} FPS): الحركة غير متساوية رغم الـ FPS العالي.",
          "The 1% Low ({} FPS) is far below the average ({} FPS): motion was uneven despite the high FPS."),
         ("المعالج كان على {}% وقت التقطيع: المعالج هو الحد. أغلق البرامج الخلفية وخفّض إعدادات الفيزياء والزحام في اللعبة.",
