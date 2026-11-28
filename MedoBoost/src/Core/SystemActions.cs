@@ -105,7 +105,6 @@ public static class SystemActions
         Util.Run("netsh", "int ip reset", 30000);
         Util.Run("netsh", "interface ipv4 reset", 30000);
         Util.Run("netsh", "interface tcp reset", 30000);
-        Util.Run("netsh", "advfirewall reset", 30000);
         Log.Ok("تم إصلاح الشبكة – أعد تشغيل الجهاز");
     }
 

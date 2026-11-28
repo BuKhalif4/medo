@@ -75,7 +75,8 @@ jobs:
           $tag = "v1.1.${{ github.run_number }}"
           $msg = git log -1 --format=%s
           Copy-Item out/KHABoost.exe out/MedoBoost.exe   # old versions update from this name
-          gh release create $tag out/KHABoost.exe out/MedoBoost.exe --target ${{ github.sha }} --title "KHA Boost $tag" --notes "$msg" --latest
+          (Get-FileHash out/KHABoost.exe -Algorithm SHA256).Hash.ToLower() | Out-File -Encoding ascii -NoNewline out/KHABoost.exe.sha256
+          gh release create $tag out/KHABoost.exe out/MedoBoost.exe out/KHABoost.exe.sha256 --target ${{ github.sha }} --title "KHA Boost $tag" --notes "$msg" --latest
 
       - name: Save screenshots to the branch (for UI review)
         if: always() && github.event_name == 'push' && !contains(github.event.head_commit.message, '[screens]')

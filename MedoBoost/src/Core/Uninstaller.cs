@@ -81,7 +81,7 @@ public static class Uninstaller
             string cmd = (silent && !string.IsNullOrWhiteSpace(app.QuietUninstallString)) ? app.QuietUninstallString : app.UninstallString;
             if (string.IsNullOrWhiteSpace(cmd)) return false;
             string file, args;
-            if (cmd.StartsWith("\"")) { int e = cmd.IndexOf('"', 1); file = cmd[1..e]; args = cmd[(e + 1)..].Trim(); }
+            if (cmd.StartsWith("\"") && cmd.IndexOf('"', 1) > 0) { int e = cmd.IndexOf('"', 1); file = cmd[1..e]; args = cmd[(e + 1)..].Trim(); }
             else if (cmd.StartsWith("MsiExec", StringComparison.OrdinalIgnoreCase))
             {
                 file = "msiexec.exe";
@@ -105,11 +105,9 @@ public static class Uninstaller
         var found = new List<string>();
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (!string.IsNullOrWhiteSpace(app.InstallLocation)) names.Add(Path.GetFileName(app.InstallLocation.TrimEnd('\\')));
-        // "Vendor Product" and the product's main words
-        var pub = app.Publisher.Split(' ', ',').FirstOrDefault(w => w.Length > 2);
+        // only the product's own name and its install folder. Never the publisher: "Google" or "Microsoft" folders are shared by other apps.
         var prod = app.Name.Split('(', '-').First().Trim();
-        if (prod.Length > 2) names.Add(prod);
-        if (!string.IsNullOrEmpty(pub) && pub.Length > 2) names.Add(pub);
+        if (prod.Length > 3) names.Add(prod);
 
         var roots = new[]
         {

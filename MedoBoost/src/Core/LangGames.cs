@@ -33,6 +33,9 @@ internal static class LangGames
         ("كرت الشاشة ({}) كافي.", "The graphics card ({}) is enough."),
         ("ما قدرت أقارن كرت الشاشة تلقائياً. المطلوب: {}", "I could not compare the graphics card automatically. Required: {}"),
         ("المعالج المطلوب: {} (عندك: {}). المعالجات ما أقارنها تلقائياً، قارنها بنفسك.", "Required CPU: {} (yours: {}). I do not compare CPUs automatically, compare them yourself."),
+        // updater
+        ("هذا الإصدار ما فيه ملف تحقق (sha256)، لذلك ما ثبّتّه. حمّله يدوياً من صفحة المشروع.", "This release has no checksum file (sha256), so I did not install it. Download it manually from the project page."),
+        ("الملف اللي نزل ما يطابق التحقق (sha256). ما ثبّتّه.", "The downloaded file does not match its checksum (sha256). I did not install it."),
         // overlay styles
         ("نمط الأوفرلاي", "Overlay style"), ("كامل", "Full"), ("بسيط (FPS فقط)", "Minimal (FPS only)"), ("احترافي", "Pro"), ("نيون", "Neon"), ("مخصص", "Custom"),
         ("«مخصص» و«نيون»: اختر اللون وبعدين العناصر من الخيارات تحت.", "“Custom” and “Neon”: pick the colour, then the items from the options below."),

@@ -12,7 +12,7 @@ public static class Updater
 {
     const string Api = "https://api.github.com/repos/BuKhalif4/medo/releases/latest";
 
-    public record Release(Version Version, string Tag, string Notes, string Url, long Size);
+    public record Release(Version Version, string Tag, string Notes, string Url, long Size, string ShaUrl = "");
 
     public static Version Current
     {
@@ -34,11 +34,15 @@ public static class Updater
 
     public static string LastError { get; private set; } = "";
 
-    static Release Make(string tag, string notes, string url, long size)
+    static void TryDelete(string f) { try { File.Delete(f); } catch (Exception ex) { Log.Warn("Update cleanup: " + ex.Message); } }
+
+    static Release Make(string tag, string notes, string url, long size, string shaUrl = "")
     {
+        // the tag ends up inside a download URL, so only plain version tags are accepted
+        if (!System.Text.RegularExpressions.Regex.IsMatch(tag, @"^[vV]?\d+\.\d+(\.\d+)?$")) return null;
         if (!Version.TryParse(tag.TrimStart('v', 'V'), out var v)) return null;
         v = new Version(v.Major, v.Minor, Math.Max(0, v.Build));
-        return v <= Current ? null : new Release(v, tag, notes, url, size);
+        return v <= Current ? null : new Release(v, tag, notes, url, size, shaUrl);
     }
 
     /// <summary>
@@ -56,12 +60,16 @@ public static class Updater
             using var doc = JsonDocument.Parse(await h.GetStringAsync(Api));
             var root = doc.RootElement;
             var tag = root.GetProperty("tag_name").GetString() ?? "";
+            string shaUrl = "";
+            foreach (var a in root.GetProperty("assets").EnumerateArray())
+                if (string.Equals(a.GetProperty("name").GetString(), "KHABoost.exe.sha256", StringComparison.OrdinalIgnoreCase))
+                    shaUrl = a.GetProperty("browser_download_url").GetString() ?? "";
             foreach (var a in root.GetProperty("assets").EnumerateArray())
             {
                 var an = a.GetProperty("name").GetString();
                 if (!string.Equals(an, "KHABoost.exe", StringComparison.OrdinalIgnoreCase) && !string.Equals(an, "MedoBoost.exe", StringComparison.OrdinalIgnoreCase)) continue;
                 var notes = root.TryGetProperty("body", out var b) ? b.GetString() ?? "" : "";
-                return Make(tag, notes, a.GetProperty("browser_download_url").GetString(), a.GetProperty("size").GetInt64());
+                return Make(tag, notes, a.GetProperty("browser_download_url").GetString(), a.GetProperty("size").GetInt64(), shaUrl);
             }
             return null;
         }
@@ -78,7 +86,7 @@ public static class Updater
             if (k < 0) throw new Exception("no release page");
             var tag = loc[(k + 5)..];
             LastError = "";
-            return Make(tag, "", $"https://github.com/BuKhalif4/medo/releases/download/{tag}/KHABoost.exe", 0);
+            return Make(tag, "", $"https://github.com/BuKhalif4/medo/releases/download/{tag}/KHABoost.exe", 0, $"https://github.com/BuKhalif4/medo/releases/download/{tag}/KHABoost.exe.sha256");
         }
         catch (Exception ex) { Log.Warn("Update check (page): " + ex.Message); if (LastError.Length == 0) LastError = ex.Message; }
         return null;
@@ -107,7 +115,23 @@ public static class Updater
             }
         }
         var len = new FileInfo(tmp).Length;
-        if (len < 5_000_000) throw new Exception("الملف اللي نزل ناقص – جرّب مرة ثانية");
+        if (len < 5_000_000) { TryDelete(tmp); throw new Exception("الملف اللي نزل ناقص – جرّب مرة ثانية"); }
+
+        // integrity: the release publishes KHABoost.exe.sha256 next to the exe. No hash, or a different one → nothing is installed.
+        // (This catches corrupted / cut-off downloads. Proof of who built the file needs code signing.)
+        string want = "";
+        try
+        {
+            using var h = Http();
+            var shaUrl = string.IsNullOrEmpty(r.ShaUrl) ? r.Url + ".sha256" : r.ShaUrl;
+            var m = System.Text.RegularExpressions.Regex.Match(await h.GetStringAsync(shaUrl), "[0-9a-fA-F]{64}");
+            if (m.Success) want = m.Value.ToLowerInvariant();
+        }
+        catch (Exception ex) { Log.Warn("Update hash fetch: " + ex.Message); }
+        if (want == "") { TryDelete(tmp); throw new Exception("هذا الإصدار ما فيه ملف تحقق (sha256)، لذلك ما ثبّتّه. حمّله يدوياً من صفحة المشروع."); }
+        string got;
+        await using (var fs = File.OpenRead(tmp)) got = Convert.ToHexString(await System.Security.Cryptography.SHA256.HashDataAsync(fs)).ToLowerInvariant();
+        if (got != want) { TryDelete(tmp); Log.Error($"تحديث: الـ hash ما يطابق ({got} بدل {want})"); throw new Exception("الملف اللي نزل ما يطابق التحقق (sha256). ما ثبّتّه."); }
 
         var exe = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule!.FileName;
         var backup = Path.Combine(dir, "KHABoost.previous.exe");
