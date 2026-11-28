@@ -5,7 +5,7 @@ internal static class LangGames
 {
     public static readonly (string ar, string en)[] Pairs =
     {
-        ("ألعابي", "My games"),
+        ("ألعابي", "My games"), ("جلسات", "Sessions"), ("الصلاة", "Prayer"),
         ("يلقى الألعاب المثبتة من Steam و Epic و GOG، ويشغّلها لك بعد ما يجهّز الجهاز، ويقول لك هل جهازك يقدر يشغّلها قبل ما تنزّلها أو تلعبها.",
          "Finds the games installed from Steam, Epic and GOG, launches them after preparing your PC, and tells you whether your PC can run them."),
         ("فحص الألعاب من جديد", "Rescan games"), ("جاري البحث...", "Searching..."), ("لقيت", "Found"), ("لعبة", "games"),

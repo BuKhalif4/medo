@@ -36,10 +36,10 @@ public partial class MainWindow : Window
     {
         Instance = this;
         Title = "KHA Boost";
-        Width = 1280; Height = 800; MinWidth = Ui.Prime ? 1120 : 1020; MinHeight = 640;
+        Width = 1280; Height = 800; MinWidth = 1020; MinHeight = 640;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         FlowDirection = L.Flow;
-        FontFamily = new FontFamily(Ui.Prime ? "Bahnschrift, Segoe UI" : "Segoe UI");
+        FontFamily = new FontFamily("Segoe UI");
         Background = Ui.B("Bg");
         Foreground = Ui.B("Text");
         WindowStyle = WindowStyle.None;
@@ -49,7 +49,7 @@ public partial class MainWindow : Window
         try { Icon = Ui.Logo(); } catch { }
         WindowChrome.SetWindowChrome(this, new WindowChrome
         {
-            CaptionHeight = Ui.Prime ? 52 : 44, ResizeBorderThickness = new Thickness(6), GlassFrameThickness = new Thickness(0),
+            CaptionHeight = 44, ResizeBorderThickness = new Thickness(6), GlassFrameThickness = new Thickness(0),
             CornerRadius = Ui.Cr(0), UseAeroCaptionButtons = false,
         });
 
@@ -100,7 +100,6 @@ public partial class MainWindow : Window
         SourceInitialized += OnSourceInitialized;
         StateChanged += (_, _) => { if (Content is FrameworkElement fe) fe.Margin = WindowState == WindowState.Maximized ? new Thickness(7) : new Thickness(0); };
         Application.Current.SessionEnding += (_, _) => Quitting = true;
-        PreviewKeyDown += OnFKey;
         if (L.En)
         {
             var sweep = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
@@ -131,7 +130,6 @@ public partial class MainWindow : Window
 
     UIElement Build()
     {
-        if (Ui.Prime) return BuildPrime();
         var root = new Grid();
         root.Children.Add(BackgroundFx());
 
@@ -283,7 +281,7 @@ public partial class MainWindow : Window
         contentHost.Children.Clear();
         contentHost.Children.Add(page);
         current = page;
-        if (Ui.Prime) Ui.ScanReveal(page, contentHost); else Ui.FadeIn(page, 0, 18, 420);
+        Ui.FadeIn(page, 0, 18, 420);
         try { page.OnShow(); } catch (Exception ex) { Log.Error($"OnShow {id}: {ex.Message}"); }
     }
 

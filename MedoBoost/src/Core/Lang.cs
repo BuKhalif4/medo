@@ -28,7 +28,7 @@ public static class L
         ("تخطي", "Skip"), ("أهلاً بك", "Welcome"), ("دخول", "Enter"), ("اللغة", "Language"), ("التصميم", "Design"), ("اللغة / Language", "Language"),
         ("إنشاء نقطة استعادة للنظام الآن (منصوح)", "Create a system restore point now (recommended)"),
         ("عرض شاشة الترحيب", "Replay the intro"),
-        ("تغيير اللغة أو التصميم يعيد تشغيل البرنامج تلقائياً.", "Changing the language or design restarts the app automatically."),
+        ("تغيير اللغة يعيد تشغيل البرنامج تلقائياً.", "Changing the language restarts the app automatically."),
         ("جاري إعادة تشغيل البرنامج...", "Restarting the app..."),
         ("جهّز للعب (Ctrl+Shift+G)", "Game Ready (Ctrl+Shift+G)"),
         ("نقطة الاستعادة جاهزة", "Restore point is ready"),

@@ -277,7 +277,7 @@ public static class SessionDiagnosis
         if (stutter)
         {
             string lvl = r.Stutters > 15 || r.MaxFrameMs >= 200 ? "bad" : "warn";
-            Add(lvl, $"حصل {r.Stutters} توقف (إطار أطول من 50 ms)، وأطولها {r.MaxFrameMs:0} ms.");
+            Add(lvl, $"حصل {r.Stutters} توقف (إطار أطول من 50 ms وأطول بكثير من المعتاد)، وأطولها {r.MaxFrameMs:0} ms.");
         }
         if (uneven) Add("warn", $"الـ 1% Low ({r.Low1:0} FPS) أقل بكثير من المتوسط ({r.AvgFps:0} FPS): الحركة غير متساوية رغم الـ FPS العالي.");
 

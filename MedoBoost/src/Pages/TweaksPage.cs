@@ -38,7 +38,7 @@ public class TweaksPage : PageBase
 
         var info = Ui.Card(Ui.Cols(new[] { "Auto", "*" }, Ui.Icon("", 22, "Good").M(0, 0, 12, 0),
             Ui.Txt("كل تويك يحفظ القيمة الأصلية قبل التعديل، وتقدر ترجعه بإطفاء المفتاح. ننصح بإنشاء نقطة استعادة قبل أول مرة. التويكات المعلّمة «منصوح» آمنة ومجربة.", 12.5, "TextDim", null, TextWrapping.Wrap)), 14);
-        info.Background = Ui.Prime ? Ui.B("Surface2") : Ui.Solid("#1422C55E");
+        info.Background = Ui.Solid("#1422C55E");
 
         var head = Ui.VStack(
             Ui.Title("تسريع وتويكات"),

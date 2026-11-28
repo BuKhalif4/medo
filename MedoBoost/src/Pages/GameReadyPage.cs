@@ -39,7 +39,6 @@ public class GameReadyPage : PageBase
         bigBtn.MouseEnter += (_, _) => Scale(1.06);
         bigBtn.MouseLeave += (_, _) => Scale(1);
         bigBtn.MouseLeftButtonUp += async (_, _) => { bigBtn.IsEnabled = false; await GameMode.ToggleAsync(); bigBtn.IsEnabled = true; Update(); };
-        if (Ui.Prime) glow.Visibility = Visibility.Collapsed;   // no glow in the instrument design
         var bigHost = new Grid { Width = 150, Height = 150 };
         bigHost.Children.Add(glow); bigHost.Children.Add(bigBtn);
         var pulse = new DoubleAnimation(0.25, 0.7, TimeSpan.FromSeconds(1.4)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever };

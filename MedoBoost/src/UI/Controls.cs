@@ -47,7 +47,7 @@ public class RingGauge : FrameworkElement
         v = double.IsNaN(v) ? 0 : Math.Clamp(v, 0, 100);
         ValueText = text;
         if (sub != null) SubText = sub;
-        BeginAnimation(ValueProperty, new DoubleAnimation(v, TimeSpan.FromMilliseconds(Ui.Prime ? 900 : 650)) { EasingFunction = Ui.Prime ? new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 } : new CubicEase { EasingMode = EasingMode.EaseOut } });
+        BeginAnimation(ValueProperty, new DoubleAnimation(v, TimeSpan.FromMilliseconds(650)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
         InvalidateVisual();
     }
 
@@ -67,48 +67,9 @@ public class RingGauge : FrameworkElement
         return sg;
     }
 
-    static readonly Typeface DialNum = new(new FontFamily("Bahnschrift, Segoe UI"), FontStyles.Normal, FontWeights.Light, FontStretches.Normal);
-    static readonly Typeface DialLbl = new(new FontFamily("Cascadia Mono, Consolas"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
-    static readonly Pen TickDim = Mk("#FF34343A", 1.2), TickBone = Mk("#FFECE8E1", 1.8), TickBoneMajor = Mk("#FFECE8E1", 2.4), TickHead = Mk("#FFFF5B2E", 3.2);
-    static Pen Mk(string hex, double t) { var p = new Pen(new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex)), t) { StartLineCap = PenLineCap.Flat, EndLineCap = PenLineCap.Flat }; p.Freeze(); return p; }
-
-    /// <summary>Prime: an instrument dial. 54 ticks over 270°; ticks light up to the value and the leading tick is ember.</summary>
-    void RenderDial(DrawingContext dc)
-    {
-        double w = ActualWidth, h = ActualHeight, size = Math.Min(w, h);
-        var c = new Point(w / 2, h / 2);
-        double R = size / 2 - 6;
-        const int n = 54;
-        for (int i = 0; i < n; i++)
-        {
-            double t = i / (double)(n - 1);
-            double ang = (135 + 270 * t) * Math.PI / 180;
-            bool major = i % 9 == 0 || i == n - 1;
-            double len = major ? 16 : 9;
-            var dir = new Vector(Math.Cos(ang), Math.Sin(ang));
-            bool lit = t * 100 <= Value + 0.01;
-            bool head = lit && (i == n - 1 || (i + 1) / (double)(n - 1) * 100 > Value);
-            if (head) len = 20;
-            var pen = !lit ? TickDim : head ? TickHead : major ? TickBoneMajor : TickBone;
-            dc.DrawLine(pen, c + dir * (R - len), c + dir * R);
-        }
-        double dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
-        var bone = new SolidColorBrush(Color.FromRgb(0xEC, 0xE8, 0xE1));
-        var vt = new FormattedText(ValueText, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, DialNum, size * 0.27, bone, dpi);
-        dc.DrawText(vt, new Point(c.X - vt.Width / 2, c.Y - vt.Height / 2 - size * 0.03));
-        var lt = new FormattedText(Label.ToUpperInvariant(), CultureInfo.InvariantCulture, FlowDirection.LeftToRight, DialLbl, size * 0.07, new SolidColorBrush(Color.FromRgb(0x8A, 0x86, 0x7E)), dpi);
-        dc.DrawText(lt, new Point(c.X - lt.Width / 2, c.Y + vt.Height / 2 - size * 0.02));
-        if (!string.IsNullOrEmpty(SubText))
-        {
-            bool rtl = SubText.Any(ch => ch >= '\u0600' && ch <= '\u06FF');
-            var st = new FormattedText(SubText, CultureInfo.InvariantCulture, rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight, DialLbl, size * 0.075, new SolidColorBrush(Color.FromRgb(0xFF, 0x5B, 0x2E)), dpi);
-            dc.DrawText(st, new Point(c.X - st.Width / 2, c.Y + R * 0.74));
-        }
-    }
 
     protected override void OnRender(DrawingContext dc)
     {
-        if (Ui.Prime) { RenderDial(dc); return; }
         double w = ActualWidth, h = ActualHeight;
         double size = Math.Min(w, h);
         var c = new Point(w / 2, h / 2);
@@ -144,12 +105,12 @@ public class Sparkline : FrameworkElement
     readonly Color[] colors;
     public int Capacity = 60;
     public double FixedMax = 100;   // <=0 → auto scale
-    public bool Fill = !Ui.Prime;
+    public bool Fill = true;
 
     public Sparkline(params string[] hexColors)
     {
         FlowDirection = FlowDirection.LeftToRight;
-        colors = hexColors.Select((h, i) => Ui.C(Ui.Prime ? Ui.Series(i) : h)).ToArray();
+        colors = hexColors.Select((h, i) => Ui.C(h)).ToArray();
         series = colors.Select(_ => new List<double>()).ToArray();
         Height = 120;
         ClipToBounds = true;
@@ -201,8 +162,7 @@ public class Sparkline : FrameworkElement
                 var fill = new LinearGradientBrush(Color.FromArgb(0x55, colors[si].R, colors[si].G, colors[si].B), Color.FromArgb(0x00, colors[si].R, colors[si].G, colors[si].B), 90);
                 dc.DrawGeometry(fill, null, area);
             }
-            dc.DrawGeometry(null, new Pen(new SolidColorBrush(colors[si]), Ui.Prime ? 1.6 : 2) { LineJoin = PenLineJoin.Round }, line);
-            if (Ui.Prime) dc.DrawEllipse(new SolidColorBrush(colors[si]), null, pts[^1], 3, 3);
+            dc.DrawGeometry(null, new Pen(new SolidColorBrush(colors[si]), 2) { LineJoin = PenLineJoin.Round }, line);
         }
     }
 }
@@ -228,7 +188,7 @@ public static class Dialogs
         var card = Ui.Card(content, 26, 18);
         card.MaxWidth = 520; card.HorizontalAlignment = HorizontalAlignment.Center; card.VerticalAlignment = VerticalAlignment.Center;
         card.Background = Ui.B("Surface2");
-        card.Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 40, ShadowDepth = 0, Opacity = Ui.Prime ? 0.8 : 0.6, Color = Ui.Prime ? Colors.Black : ((SolidColorBrush)Ui.B("Accent")).Color };
+        card.Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 40, ShadowDepth = 0, Opacity = 0.6, Color = ((SolidColorBrush)Ui.B("Accent")).Color };
         var layer = new Grid();
         layer.Children.Add(dim); layer.Children.Add(card);
         Host.Children.Add(layer);

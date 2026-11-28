@@ -47,7 +47,7 @@ public class OverlayWindow : Window
         };
         Content = panel;
 
-        string A = Ui.Prime ? "#FFFF5B2E" : "#FF22D3EE", Bn = Ui.Prime ? "#FFECE8E1" : "#FFA78BFA", Gn = Ui.Prime ? "#FF9DB596" : "#FF4ADE80", Rm = Ui.Prime ? "#FFD9D3C5" : "#FFF472B6";
+        string A = "#FF22D3EE", Bn = "#FFA78BFA", Gn = "#FF4ADE80", Rm = "#FFF472B6";
         Add("fps", "FPS", A, true);
         Add("ft", "ms", "#FF9A9AB8");
         Add("cpu", "CPU", Bn);
