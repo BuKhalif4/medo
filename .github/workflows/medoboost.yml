@@ -67,7 +67,7 @@ jobs:
           Get-Content "$dir\actions.txt"
 
       - name: Publish release (the app auto-updates from here)
-        if: success() && github.event_name == 'push'
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'   # only main reaches users; other branches just build
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
