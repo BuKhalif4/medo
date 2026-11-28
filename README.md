@@ -2,5 +2,6 @@
 
 كل مشروع في مجلد لوحده وله سيرفره الخاص:
 
-- `bag-city/` : **مدينة الحقيبة** (الحقيبة التي لها سجل، الصحفي، المداهمة). التشغيل: `bag-city/localhost-setup/START-HERE.md`.
-- `medo-game/` : **ميدو (MEDO)** لعبة جريمة وشرطة (السوق السوداء، الشحنات، الرتب، السطو والبيع، المجموعة، المسح الأسبوعي). التشغيل: `medo-game/localhost-setup/START-HERE.md`.
+- `medo-kit/` : **طقم ميدو (MDK)**: ست سكربتات (حدود، حقيبة وسجلها، شرطة، صحافة، سوق وشحنات، مجموعة) بلوحة تحكم واحدة. قابلة للإضافة لأي سيرفر. التشغيل: `medo-kit/localhost-setup/START-HERE.md`.
+- `bag-city/` : **مدينة الحقيبة** (المشروع الأول المتكامل). التشغيل: `bag-city/localhost-setup/START-HERE.md`.
+- `medo-game/` : **ميدو (MEDO)** لعبة جريمة وشرطة مستقلة. التشغيل: `medo-game/localhost-setup/START-HERE.md`.

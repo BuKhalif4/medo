@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>MDK</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- شريط الحالة -->
+  <div id="status" class="status" hidden></div>
+
+  <!-- رسائل -->
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <div id="banner" class="banner" hidden><b></b><span></span></div>
+  <div id="zone" class="zonewarn" hidden></div>
+  <div id="prompt" class="prompt" hidden></div>
+  <div id="progress" class="progress" hidden><span></span><div class="track"><i></i></div></div>
+
+  <!-- لوحة التحكم -->
+  <div id="hub" class="hubwrap" hidden>
+    <div class="hub" role="dialog" aria-label="لوحة التحكم">
+      <aside class="side">
+        <div class="brand"><div class="logo">M</div><div><b>طقم ميدو</b><small>MDK · لوحة التحكم</small></div></div>
+        <nav id="nav" class="nav"></nav>
+        <div class="me"><div class="av" id="meAv">؟</div><div><b id="meName">—</b><small id="meCash">0</small></div></div>
+      </aside>
+      <section class="main">
+        <header class="top">
+          <div><h1 id="pgTitle">الرئيسية</h1><p id="pgSub"></p></div>
+          <button id="hubClose" class="x" type="button" aria-label="إغلاق">✕</button>
+        </header>
+        <div id="pg" class="pg"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- نوافذ -->
+  <div id="modal" class="overlay" hidden>
+    <form id="modalForm" class="dlg">
+      <h2 id="modalTitle"></h2>
+      <input id="modalInput" type="text" autocomplete="off" maxlength="80">
+      <div class="row"><button type="submit" class="btn pri">إرسال</button><button type="button" id="modalCancel" class="btn">إلغاء</button></div>
+    </form>
+  </div>
+  <div id="doc" class="overlay" hidden>
+    <article class="dlg">
+      <h2 id="docTitle"></h2>
+      <ul id="docLines" class="lines"></ul>
+      <div class="row"><button type="button" id="docClose" class="btn pri">إغلاق</button></div>
+    </article>
+  </div>
+  <div id="ammoModal" class="overlay" hidden>
+    <form id="ammoForm" class="dlg">
+      <h2 id="ammoTitle"></h2>
+      <div class="ammo-row"><span>1</span><input id="ammoRange" type="range" min="1" max="360" value="60"><span id="ammoQty">60</span></div>
+      <p class="ammo-price">السعر: <b id="ammoPrice">0</b></p>
+      <div class="row"><button type="submit" class="btn pri">شراء</button><button type="button" id="ammoCancel" class="btn">إلغاء</button></div>
+    </form>
+  </div>
+<script src="app.js"></script>
+</body>
+</html>
