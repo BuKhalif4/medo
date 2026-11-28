@@ -102,3 +102,7 @@ dist
 
 # TernJS port file
 .tern-port
+
+# MEDO Boost build output
+MedoBoost/bin/
+MedoBoost/obj/
