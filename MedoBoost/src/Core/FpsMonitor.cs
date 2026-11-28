@@ -38,6 +38,28 @@ public sealed class FpsMonitor : IDisposable
     int benchPid;
     public bool Benchmarking => benchFrames != null;
 
+    // Play-session capture (SessionRecorder): every frame time of one process + stutter counters per window
+    List<double> sessFrames;
+    int sessPid, sessStutters;
+    double sessMaxMs;
+    public const double StutterMs = 50;
+
+    public void BeginSession(int pid)
+    {
+        lock (gate) { sessPid = pid; sessFrames = new List<double>(1 << 16); sessStutters = 0; sessMaxMs = 0; }
+    }
+
+    public List<double> EndSession()
+    {
+        lock (gate) { var f = sessFrames; sessFrames = null; return f; }
+    }
+
+    /// <summary>Stutters (frames >= 50 ms) and the longest frame since the last call.</summary>
+    public (int stutters, double maxMs) TakeWindow()
+    {
+        lock (gate) { var r = (sessStutters, sessMaxMs); sessStutters = 0; sessMaxMs = 0; return r; }
+    }
+
     public void Start()
     {
         if (Running) return;
@@ -91,6 +113,12 @@ public sealed class FpsMonitor : IDisposable
                 {
                     st.LastFrameMs = ft;
                     if (benchFrames != null && pid == benchPid) benchFrames.Add(ft);
+                    if (sessFrames != null && pid == sessPid)
+                    {
+                        sessFrames.Add(ft);
+                        if (ft >= StutterMs) sessStutters++;
+                        if (ft > sessMaxMs) sessMaxMs = ft;
+                    }
                 }
             }
             if (dx) st.LastDx = t; else st.LastKr = t;

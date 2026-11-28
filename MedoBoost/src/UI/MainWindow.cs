@@ -63,6 +63,8 @@ public partial class MainWindow : Window
         factories["uninstall"] = () => new UninstallPage();
         factories["startup"] = () => new StartupPage();
         factories["fps"] = () => new FpsPage();
+        factories["sessions"] = () => new SessionsPage();
+        factories["prayer"] = () => new PrayerPage();
         factories["tools"] = () => new ToolsPage();
         factories["log"] = () => new LogPage();
 
@@ -155,8 +157,9 @@ public partial class MainWindow : Window
         side.Children.Add(head);
 
         var nav = new StackPanel();
-        Grid.SetRow(nav, 1);
-        side.Children.Add(nav);
+        var navScroll = new ScrollViewer { Content = nav, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        Grid.SetRow(navScroll, 1);
+        side.Children.Add(navScroll);
         void Nav(string id, string glyph, string text)
         {
             var rb = new RadioButton { Style = Ui.S("NavBtn"), Tag = glyph, Content = text, GroupName = "nav" };
@@ -172,6 +175,8 @@ public partial class MainWindow : Window
         Nav("tweaks", "", "تسريع وتويكات");
         Nav("startup", "", "بدء التشغيل");
         Nav("fps", "", "FPS والأوفرلاي");
+        Nav("sessions", "\uE9D9", "جلسات اللعب");
+        Nav("prayer", "\uE823", "مواقيت الصلاة");
         Nav("security", "", "الحماية والتحديثات");
         Nav("uninstall", "", "إلغاء التثبيت");
         Nav("tools", "", "أدوات الإصلاح");

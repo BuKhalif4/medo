@@ -176,7 +176,7 @@ public static class GameMode
     static DispatcherTimer timer;
     static int streak, ignorePid;
     static bool firstTick = true;
-    static readonly HashSet<string> NotGames = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly HashSet<string> NotGames = new(StringComparer.OrdinalIgnoreCase)
     {
         "chrome", "msedge", "firefox", "brave", "opera", "vivaldi", "iexplore", "vlc", "wmplayer", "mpc-hc64", "potplayermini64",
         "obs64", "obs32", "discord", "spotify", "explorer", "code", "devenv", "KHABoost", "MedoBoost", "WindowsTerminal", "Teams", "ms-teams",

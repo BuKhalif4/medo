@@ -47,6 +47,16 @@ public class AppSettings
     public string BenchLabel { get; set; } = "قبل";
     public bool AutoRamClean { get; set; } = false;
     public int AutoRamThreshold { get; set; } = 85;
+    // play sessions
+    public bool RecordSessions { get; set; } = true;
+    // prayer times (calculated offline, nothing is sent anywhere)
+    public bool PrayerAlerts { get; set; } = false;
+    public bool PrayerSound { get; set; } = true;
+    public int PrayerMinutesBefore { get; set; } = 10;
+    public string PrayerCity { get; set; } = "";          // key of Prayer.Cities, "" = not chosen yet
+    public double PrayerLat { get; set; } = 21.4225;
+    public double PrayerLon { get; set; } = 39.8262;
+    public string PrayerMethod { get; set; } = "MWL";     // MWL | Makkah | Egypt | Karachi | ISNA
 }
 
 internal static class Settings

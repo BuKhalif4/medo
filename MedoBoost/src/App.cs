@@ -73,6 +73,7 @@ public static class Program
         GameBoost.StartAutoPriority();
         ThermalWatch.Start();
         GameMode.StartAuto();
+        if (!selfTest) { SessionRecorder.Start(); Prayer.StartAlerts(); }
         if (selfTest) win.Loaded += (_, _) => _ = SelfTest(win, args.Length > 1 ? args[1] : "selftest");
         int code = app.Run(win);
 
