@@ -1,0 +1,107 @@
+name: KHA Boost build
+
+on:
+  push:
+    paths:
+      - 'MedoBoost/**'
+      - '.github/workflows/medoboost.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish single-file exe
+        run: dotnet publish MedoBoost/MedoBoost.csproj -c Release -o out -p:Version=1.1.${{ github.run_number }}
+
+      - name: Self-test (open every page, take screenshots)
+        shell: pwsh
+        run: |
+          $shots = Join-Path $PWD 'shots'
+          $p = Start-Process -FilePath 'out\KHABoost.exe' -ArgumentList '--selftest', "`"$shots`"" -PassThru
+          if (-not $p.WaitForExit(180000)) { $p.Kill(); Write-Error 'self-test timed out' }
+          Write-Host "exit code: $($p.ExitCode)"
+          if (Test-Path "$shots\crash.txt") { Get-Content "$shots\crash.txt" }
+          Get-ChildItem $shots | Format-Table Name, Length
+          if (Test-Path "$shots\error.txt") { Get-Content "$shots\error.txt" }
+          if (Test-Path "$shots\log.txt") { Get-Content "$shots\log.txt" }
+          Get-ChildItem "$env:LOCALAPPDATA\MedoBoost\logs" -ErrorAction SilentlyContinue | ForEach-Object { Get-Content $_.FullName -Tail 80 }
+          if ($p.ExitCode -ne 0) { exit 1 }
+
+      - name: Self-test, English
+        shell: pwsh
+        run: |
+          $shots = Join-Path $PWD 'shots-en'
+          $p = Start-Process -FilePath 'out\KHABoost.exe' -ArgumentList '--selftest', "`"$shots`"", 'en', 'prime' -PassThru
+          if (-not $p.WaitForExit(180000)) { $p.Kill(); Write-Error 'English self-test timed out' }
+          Write-Host "exit code: $($p.ExitCode)"
+          if (Test-Path "$shots\untranslated.txt") { Get-Content "$shots\untranslated.txt" }
+          if (Test-Path "$shots\error.txt") { Get-Content "$shots\error.txt" }
+          if ($p.ExitCode -ne 0) { exit 1 }
+
+      - name: Self-test, classic design
+        shell: pwsh
+        run: |
+          $shots = Join-Path $PWD 'shots-classic'
+          $p = Start-Process -FilePath 'out\KHABoost.exe' -ArgumentList '--selftest', "`"$shots`"", 'ar', 'classic' -PassThru
+          if (-not $p.WaitForExit(180000)) { $p.Kill(); Write-Error 'classic self-test timed out' }
+          Write-Host "exit code: $($p.ExitCode)"
+          if (Test-Path "$shots\error.txt") { Get-Content "$shots\error.txt" }
+          if ($p.ExitCode -ne 0) { exit 1 }
+
+      - name: Action test (really apply/revert tweaks, debloat, clean - throwaway VM)
+        shell: pwsh
+        run: |
+          $dir = Join-Path $PWD 'actions'
+          $p = Start-Process -FilePath 'out\KHABoost.exe' -ArgumentList '--actiontest', "`"$dir`"" -PassThru
+          if (-not $p.WaitForExit(900000)) { $p.Kill(); Write-Host 'action test timed out' }
+          Get-Content "$dir\actions.txt"
+
+      - name: Publish release (the app auto-updates from here)
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'   # only main reaches users; other branches just build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $tag = "v1.1.${{ github.run_number }}"
+          $msg = git log -1 --format=%s
+          Copy-Item out/KHABoost.exe out/MedoBoost.exe   # old versions update from this name
+          (Get-FileHash out/KHABoost.exe -Algorithm SHA256).Hash.ToLower() | Out-File -Encoding ascii -NoNewline out/KHABoost.exe.sha256
+          gh release create $tag out/KHABoost.exe out/MedoBoost.exe out/KHABoost.exe.sha256 --target ${{ github.sha }} --title "KHA Boost $tag" --notes "$msg" --latest
+
+      - name: Save screenshots to the branch (for UI review)
+        if: always() && github.event_name == 'push' && !contains(github.event.head_commit.message, '[screens]')
+        shell: pwsh
+        run: |
+          if (-not (Test-Path shots)) { exit 0 }
+          New-Item -ItemType Directory -Force MedoBoost/screenshots | Out-Null
+          Copy-Item shots/*.png MedoBoost/screenshots/ -Force
+          New-Item -ItemType Directory -Force MedoBoost/screenshots/en, MedoBoost/screenshots/classic | Out-Null
+          if (Test-Path shots-en) { Copy-Item shots-en/*.png MedoBoost/screenshots/en/ -Force; Copy-Item shots-en/untranslated.txt MedoBoost/screenshots/en/ -Force -ErrorAction SilentlyContinue }
+          if (Test-Path shots-classic) { Copy-Item shots-classic/*.png MedoBoost/screenshots/classic/ -Force }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add MedoBoost/screenshots
+          git diff --cached --quiet; if ($LASTEXITCODE -eq 0) { exit 0 }
+          git commit -m "Update UI screenshots from Windows self-test [screens]"
+          git push origin HEAD:${{ github.ref_name }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: shots
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KHABoost-exe
+          path: out/KHABoost.exe
